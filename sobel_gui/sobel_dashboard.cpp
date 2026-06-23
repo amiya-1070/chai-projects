@@ -5,7 +5,7 @@
 // Link: -lGL -lglfw -lopencv_core -lopencv_imgproc -fopenmp
 
 #include "sobel_dashboard.h"
-
+#include <omp.h>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -331,7 +331,7 @@ static void DrawPipelinePanel()
         {"AVX2 Sobel Inner Loop",        "SIMD-Parallel",    {}, "16 px/iter: load→kernel→abs→min→store"},
         {"Scalar tail (width % 16)",     "Sequential",       {}, "Handles remaining columns"},
         {"Magnitude   |Gx|+|Gy|",        "SIMD-Parallel",    {}, "_mm256_add_epi16 per vector"},
-        {"Saturate → uint8",             "SIMD-Parallel",    {}, "_mm_packus_epi16 per vector"},
+        {"Saturate -> uint8",            "SIMD-Parallel",    {}, "_mm_packus_epi16 per vector"},
         {"OMP implicit barrier",         "Sequential",       {}, "Thread sync at region exit"},
         {"Output write",                 "Sequential",       {}, "memcpy to output buffer"},
     };
@@ -552,6 +552,7 @@ static void DrawBuildInfoPanel(const BuildInfo& b)
     ImGui::Text("CFLAGS             : %s", b.cflags.c_str());
     ImGui::Text("OpenMP runtime     : %s", b.openmp_runtime.c_str());
     ImGui::Text("AVX2 available     : %s", b.avx2_available ? "YES" : "NO");
+    ImGui::Text("P/E core ratio     : %.3f  (%dP + %dE logical)",b.pe_weight_ratio, b.p_core_count, b.e_core_count);
     ImGui::Spacing();
     ImGui::Text("L1 cache           : %s", b.l1_cache.c_str());
     ImGui::Text("L2 cache           : %s", b.l2_cache.c_str());
@@ -578,13 +579,13 @@ static void DrawArchDiagram()
         ImVec4      col;
     };
     static const Node nodes[] = {
-        {"Input Image",            "H×W uint8 gray",     {0.55f,0.55f,0.55f,1.f}},
-        {"Row Partitioning",       "height / nthreads",  {0.85f,0.45f,0.35f,1.f}},
-        {"OMP Thread\nAssignment", "parallel for rows",  {0.35f,0.75f,0.45f,1.f}},
-        {"AVX2 Sobel\nKernel",     "16 px / iteration",  {0.30f,0.60f,0.95f,1.f}},
+        {"Input Image",            "HxW\n uint8 gray",     {0.55f,0.55f,0.55f,1.f}},
+        {"Row Partitioning",       "height per\n nthreads",  {0.85f,0.45f,0.35f,1.f}},
+        {"OMP Thread\nAssignment", "parallel for \nrows",  {0.35f,0.75f,0.45f,1.f}},
+        {"AVX2 Sobel\nKernel",     "16 px per\n iteration",  {0.30f,0.60f,0.95f,1.f}},
         {"Magnitude\n|Gx|+|Gy|",  "adds_epu16",         {0.30f,0.60f,0.95f,1.f}},
-        {"Saturate",               "packus_epi16 → u8",  {0.30f,0.60f,0.95f,1.f}},
-        {"Output Image",           "H×W uint8 edges",    {0.55f,0.55f,0.55f,1.f}},
+        {"Saturate",               "packus_epi16 ->\n u8",  {0.30f,0.60f,0.95f,1.f}},
+        {"Output Image",           "HxW uint8 \nedges",    {0.55f,0.55f,0.55f,1.f}},
     };
     const int N = sizeof(nodes)/sizeof(nodes[0]);
 
@@ -736,6 +737,54 @@ static void DrawRooflinePanel(const DashboardData& d)
         ridge, peak_bw, peak_compute_gflops);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Panel 18 :Omp Settings
+// ═══════════════════════════════════════════════════════════════════════════════
+static void DrawOmpSettingsPanel(OmpSettings& s)
+{
+    LabeledSep("OpenMP Runtime Settings");
+
+    ImGui::Text("Changes take effect on next run.");
+    ImGui::Spacing();
+
+    // remove: int max_t = omp_get_max_threads();
+    // change slider to:
+    
+
+    // Thread count slider
+    int t = s.num_threads;
+    
+    if (ImGui::SliderInt("Num Threads", &t, 1, s.max_threads)) {
+        s.num_threads   = t;
+        s.needs_rerun   = true;
+    }
+
+    // Proc bind combo
+    static const char* bind_options[] = {"close", "spread", "master"};
+    int b = s.proc_bind;
+    if (ImGui::Combo("OMP_PROC_BIND", &b, bind_options, 3)) {
+        s.proc_bind   = b;
+        s.needs_rerun = true;
+    }
+
+    // Dynamic toggle
+    bool dyn = s.dynamic;
+    if (ImGui::Checkbox("OMP_DYNAMIC", &dyn)) {
+        s.dynamic     = dyn;
+        s.needs_rerun = true;
+    }
+
+    ImGui::Spacing();
+    if (ImGui::Button("Run Now", ImVec2(120, 0)))
+        s.needs_rerun = true;
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::TextDisabled("Active: threads=%d  bind=%s  dynamic=%s",
+        s.num_threads,
+        bind_options[s.proc_bind],
+        s.dynamic ? "true" : "false");
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Main entry point  (call once per frame after ImGui::NewFrame())
@@ -762,6 +811,11 @@ void SobelDashboard_Draw(DashboardData& d, TexCache& tc, bool refresh_textures)
 
     ImGuiID dsid = ImGui::GetID("MainDockspace");
     ImGui::DockSpace(dsid, ImVec2(0,0), ImGuiDockNodeFlags_PassthruCentralNode);
+    ImGui::End();
+
+    if (ImGui::Begin("OMP Settings")) {
+        DrawOmpSettingsPanel(d.omp_settings);
+    }
     ImGui::End();
 
     // ── Window : Images ───────────────────────────────────────────────────────

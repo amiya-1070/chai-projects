@@ -37,10 +37,10 @@ __attribute__((target("avx2")))
 void sobel_avx2_omp(
     const uint8_t* __restrict__ img,
     uint8_t*       __restrict__ out,
-    int m, int n, int T)
+    int m, int n, int T, double pe_ratio)
 {
-    
-    int p_w = 160, e_w = 100;
+    int e_w = 100;
+    int p_w = (int)(e_w * pe_ratio + 0.5);    // rounds to nearest int
     int total_w = 2 * p_w + (T - 2) * e_w;
     
     int *starts = malloc(T * sizeof(int));

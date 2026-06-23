@@ -11,7 +11,7 @@
 //   then add sobel_min.o to the link step
 
 #include "sobel_dashboard.h"
-
+#include <cpuid.h>
 #include "sobel_min.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -36,6 +36,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 
+void SobelDashboard_Draw(DashboardData& d, TexCache& tc, bool refresh_textures);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Timing helper
@@ -189,26 +190,131 @@ static std::vector<ThreadInfo> CollectThreadInfo(int H)
 // ─────────────────────────────────────────────────────────────────────────────
 // Fill BuildInfo at startup
 // ─────────────────────────────────────────────────────────────────────────────
+
+static double ReadPeakBandwidthGBs() {
+    // Try reading from dmidecode (requires root, may not work everywhere)
+    FILE* f = popen("dmidecode -t memory 2>/dev/null | grep -i 'speed:' | grep -v 'Unknown' | head -1", "r");
+    if (f) {
+        int speed_mhz = 0;
+        char line[128];
+        if (fgets(line, sizeof(line), f)) {
+            sscanf(line, " Speed: %d MT/s", &speed_mhz);
+        }
+        pclose(f);
+        if (speed_mhz > 0) {
+            // DDR: bandwidth = speed_MT/s × bus_width_bytes × channels
+            // bus width = 8 bytes (64-bit), assume dual channel
+            return (speed_mhz * 8.0 * 2.0) / 1000.0;  // GB/s
+        }
+    }
+        // Fallback: read from /sys (works without root)
+    FILE* f2 = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", "r");
+    if (f2) { fclose(f2); }  // just checking if sysfs is available
+    return 40.0;  // conservative fallback
+}
+
+    
+
+static double ReadPeakComputeGFlops() {
+        // Step 1: get max turbo frequency from scaling_max_freq
+    double max_freq_ghz = 0.0;
+    FILE* f = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", "r");
+    if (f) {
+        long freq_khz = 0;
+        fscanf(f, "%ld", &freq_khz);
+        fclose(f);
+        max_freq_ghz = freq_khz / 1e6;
+    }
+    if (max_freq_ghz < 0.5) max_freq_ghz = 3.5;  // fallback
+
+        // Step 2: count logical CPUs
+    int logical_cpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
+
+        // Step 3: check AVX2 support via cpuid
+    unsigned int eax, ebx, ecx, edx;
+    bool has_avx2 = false;
+    if (__get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx))
+        has_avx2 = (ebx >> 5) & 1;
+
+        // Step 4: ops per cycle per core
+        // AVX2 int16: 2 FMAs × 16 elements = 32 ops/cycle (theoretical)
+        // but for integer add/sub (no FMA), it's 2 ops × 16 elements = 32 ops/cycle
+    double ops_per_cycle = has_avx2 ? 32.0 : 8.0;
+
+    return logical_cpus * ops_per_cycle * max_freq_ghz;  // GOps/s
+}
+
+static double ComputePEWeightRatio(int* p_count_out, int* e_count_out) {
+    int num_cpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    
+    // read max freq for each logical CPU
+    std::vector<long> max_freqs(num_cpus, 0);
+    long overall_max = 0;
+    
+    for (int i = 0; i < num_cpus; i++) {
+        char path[128];
+        snprintf(path, sizeof(path),
+            "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq", i);
+        FILE* f = fopen(path, "r");
+        if (!f) {
+            // sysfs unavailable entirely, return uniform
+            *p_count_out = num_cpus;
+            *e_count_out = 0;
+            return 1.0;
+        }
+        fscanf(f, "%ld", &max_freqs[i]);
+        fclose(f);
+        if (max_freqs[i] > overall_max)
+            overall_max = max_freqs[i];
+    }
+    
+    // cores within 5% of the max freq are P-cores, rest are E-cores
+    long p_thresh = (long)(overall_max * 0.95);
+    long p_freq_sum = 0, e_freq_sum = 0;
+    int  p_count = 0, e_count = 0;
+    
+    for (int i = 0; i < num_cpus; i++) {
+        if (max_freqs[i] >= p_thresh) {
+            p_freq_sum += max_freqs[i];
+            p_count++;
+        } else {
+            e_freq_sum += max_freqs[i];
+            e_count++;
+        }
+    }
+    
+    *p_count_out = p_count;
+    *e_count_out = e_count;
+    
+    if (e_count == 0 || p_count == 0) return 1.0;  // homogeneous
+    
+    double avg_p = (double)p_freq_sum / p_count;
+    double avg_e = (double)e_freq_sum / e_count;
+ // after computing avg_p / avg_e:
+    const double ipc_factor = 1.2;  // P-cores ~20% better IPC than E-cores for AVX2 workloads
+    return (avg_p / avg_e) * ipc_factor;  // ≈ 1.343 × 1.2 ≈ 1.61, close to your measured 1.6
+}
+
 static BuildInfo MakeBuildInfo()
 {
     BuildInfo b;
 
-#if defined(__GNUC__)
-    char buf[128];
-    snprintf(buf, sizeof(buf), "GCC %d.%d.%d",
-             __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-    b.compiler_version = buf;
-#elif defined(__clang__)
-    b.compiler_version = "Clang " __clang_version__;
-#else
-    b.compiler_version = "Unknown";
-#endif
+    #if defined(__GNUC__)
+        char buf[128];
+        snprintf(buf, sizeof(buf), "GCC %d.%d.%d",
+                __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+        b.compiler_version = buf;
+    #elif defined(__clang__)
+        b.compiler_version = "Clang " __clang_version__;
+    #else
+        b.compiler_version = "Unknown";
+    #endif
 
-    b.cflags = "-O3 -march=native -fopenmp";  // edit to match your actual flags
+        b.cflags = "-O3 -march=native -fopenmp";  // edit to match your actual flags
 
-#if defined(__AVX2__)
-    b.avx2_available = true;
-#endif
+    #if defined(__AVX2__)
+        b.avx2_available = true;
+    #endif
 
     b.logical_cpu_count = (int)sysconf(_SC_NPROCESSORS_ONLN);
     b.omp_num_threads   = GetEnv("OMP_NUM_THREADS");
@@ -261,17 +367,40 @@ static BuildInfo MakeBuildInfo()
 
     b.openmp_runtime = "libgomp";  // adjust if using LLVM OMP
 
+    // Read peak memory bandwidth from dmidecode
+    // Falls back to a conservative estimate if not available
+    b.peak_bandwidth_gbs  = ReadPeakBandwidthGBs();
+    b.peak_compute_gflops = ReadPeakComputeGFlops();
+    
+    b.pe_weight_ratio = ComputePEWeightRatio(&b.p_core_count, &b.e_core_count);
+    
     return b;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OMP settings
+// ─────────────────────────────────────────────────────────────────────────────
+static void ApplyOmpSettings(const OmpSettings& s)
+{
+    omp_set_num_threads(s.num_threads);
+    omp_set_dynamic(s.dynamic ? 1 : 0);
+
+    static const char* bind_strs[] = {"close", "spread", "master"};
+    setenv("OMP_PROC_BIND", bind_strs[s.proc_bind], 1);
+    // OMP_PROC_BIND is read-only at runtime via the API,
+    // so setenv + respawning threads is the only portable way
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Run all benchmarks and populate DashboardData
 // ─────────────────────────────────────────────────────────────────────────────
-static DashboardData RunBenchmarks(const char* image_path)
+static DashboardData RunBenchmarks(const char* image_path, const OmpSettings& settings)
 {
     DashboardData d;
     d.build = MakeBuildInfo();
-
+    d.omp_settings = settings;   // copy in BEFORE ApplyOmpSettings
+    ApplyOmpSettings(d.omp_settings);
+    
     // Load image as grayscale
     cv::Mat src_bgr = cv::imread(image_path);
     if (src_bgr.empty()) {
@@ -291,23 +420,27 @@ static DashboardData RunBenchmarks(const char* image_path)
     d.input_gray.assign(gray.data, gray.data + N);
 
     // ── AVX2 + OMP ───────────────────────────────────────────────────────────
+    
     {
         ImplResult im;
         im.name             = "AVX2+OMP";
         im.width            = d.width;
         im.height           = d.height;
         im.magnitude_formula= "|Gx|+|Gy|";
-        im.thread_count     = omp_get_max_threads();
+        im.thread_count     = d.omp_settings.num_threads;
         im.output_gray.resize(N);
 
         const uint8_t* src_ptr = gray.data;
         uint8_t*       dst_ptr = im.output_gray.data();
         int W = d.width, H = d.height;
 
-        im.latency = BenchRuns([&]{
-            int threads = omp_get_max_threads();
+        // warmup + force thread_info[] to reflect current settings
+        sobel_avx2_omp(src_ptr, dst_ptr, H, W, d.omp_settings.num_threads, d.build.pe_weight_ratio);
+        sobel_avx2_omp(src_ptr, dst_ptr, H, W, d.omp_settings.num_threads, d.build.pe_weight_ratio);
+        sobel_avx2_omp(src_ptr, dst_ptr, H, W, d.omp_settings.num_threads, d.build.pe_weight_ratio);
 
-            sobel_avx2_omp(src_ptr,dst_ptr,H,W,threads);
+        im.latency = BenchRuns([&]{
+            sobel_avx2_omp(src_ptr, dst_ptr, H, W, d.omp_settings.num_threads, d.build.pe_weight_ratio);
         });
 
         im.bandwidth.theoretical_gb_s = 51.2;  // i7-1255U LPDDR4x-3200 dual-ch
@@ -375,6 +508,11 @@ static DashboardData RunBenchmarks(const char* image_path)
     // Bytes: 9 src reads + 1 dst write = 10 bytes/pixel (with cache reuse ≈ 4)
     d.arithmetic_intensity = 22.0 / 4.0;  // ≈ 5.5 FLOP/byte
 
+    // at the end of RunBenchmarks, before return d:
+    d.build.omp_num_threads = std::to_string(d.omp_settings.num_threads);
+    d.build.omp_proc_bind   = (d.omp_settings.proc_bind == 0) ? "close"
+                            : (d.omp_settings.proc_bind == 1) ? "spread" : "master";
+
     return d;
 }
 
@@ -394,11 +532,18 @@ int main(int argc, char** argv)
     const char* image_path = argc > 1 ? argv[1] : "/media/amiyaun/New Volume/cv algos/sobel_gui/rain-forest-tree-view-up_jpg.png";
     printf("Running benchmarks on %s ...\n", image_path);
 
-    DashboardData data = RunBenchmarks(image_path);
 
-    static int gui_threads = omp_get_max_threads();
-    static bool gui_proc_bind = true;
-    static int gui_chunk_weight = 160;
+    // declare BEFORE the render loop, after DashboardData data = RunBenchmarks(...)
+
+    OmpSettings current_settings;
+    current_settings.num_threads = omp_get_max_threads();
+    current_settings.max_threads = omp_get_max_threads();  // before ApplyOmpSettings
+
+    ApplyOmpSettings(current_settings);
+    DashboardData data = RunBenchmarks(image_path, current_settings);
+    
+    data.omp_settings = current_settings;
+    
 
     // ── GLFW + OpenGL setup ──────────────────────────────────────────────────
     glfwSetErrorCallback(GlfwError);
@@ -449,9 +594,13 @@ int main(int argc, char** argv)
             }
             ImGui::EndMainMenuBar();
         }
-        if (rerun) {
-            data  = RunBenchmarks(image_path);
-            first = true;  // forces texture refresh
+        if (rerun || data.omp_settings.needs_rerun) {
+            data.omp_settings.needs_rerun = false;
+            OmpSettings s = data.omp_settings;
+            data = RunBenchmarks(image_path, s);
+            data.omp_settings = s;
+
+            first = true;
         }
 
         SobelDashboard_Draw(data, tc, first);
@@ -477,5 +626,3 @@ int main(int argc, char** argv)
     return 0;
 }
 
-// Declaration used in sobel_dashboard.cpp
-void SobelDashboard_Draw(DashboardData& d, TexCache& tc, bool refresh_textures);    

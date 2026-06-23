@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-void sobel_avx2_omp(const uint8_t* img, uint8_t* out, int m, int n, int T);
+void sobel_avx2_omp(const uint8_t* img, uint8_t* out, int m, int n, int T, double pe_ratio);
 
 // expose the actual partition data filled by sobel_avx2_omp
 extern int partition_start[64];

@@ -84,6 +84,20 @@ struct BuildInfo {
     std::string opencv_threading_backend;
     std::string omp_num_threads, omp_proc_bind, omp_places;
     int         logical_cpu_count = 0;
+
+    double peak_bandwidth_gbs  = 40.0;
+    double peak_compute_gflops = 100.0;
+    double pe_weight_ratio     = 1.0;
+    int    p_core_count        = 0;
+    int    e_core_count        = 0;
+};
+
+struct OmpSettings {
+    int  num_threads   = 4;
+    int  proc_bind     = 0;  // 0=close, 1=spread, 2=master
+    bool dynamic       = false;
+    bool needs_rerun   = false;  // set to true when user changes anything
+    int  max_threads = 1;   // set once at startup to omp_get_max_threads()
 };
 
 // ── One implementation's complete result ─────────────────────────────────────
@@ -117,6 +131,8 @@ struct DashboardData {
     std::vector<ThreadInfo> threads;
 
     BuildInfo build;
+
+    OmpSettings omp_settings;
 
     // Roofline
     double arithmetic_intensity = 0.0;  // FLOP/byte — compute manually or estimate
