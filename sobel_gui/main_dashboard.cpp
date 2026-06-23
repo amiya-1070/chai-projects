@@ -609,12 +609,69 @@ static void GlfwError(int, const char* msg)
     fprintf(stderr, "GLFW error: %s\n", msg);
 }
 
+
+static void RelaunchWithSettings(const char* image_path, const OmpSettings& s)
+{
+    static const char* bind_strs[] = {"close", "spread", "master"};
+
+    // build env var strings
+    char threads_str[32];
+    snprintf(threads_str, sizeof(threads_str), "%d", s.num_threads);
+
+    setenv("OMP_NUM_THREADS", threads_str,            1);
+    setenv("OMP_PROC_BIND",   bind_strs[s.proc_bind], 1);
+    setenv("OMP_DYNAMIC",     s.dynamic ? "true" : "false", 1);
+    setenv("OMP_PLACES",      "cores",                1);
+    
+
+    #if defined(OS_LINUX)
+        char exe_path[512];
+        ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path)-1);
+        if (len < 0) { perror("readlink"); return; }
+        exe_path[len] = '\0';
+        execl(exe_path, exe_path, image_path, nullptr);
+        perror("execl failed");
+    #elif defined(OS_MACOS)
+        #include <mach-o/dyld.h> 
+        char exe_path[512];
+        uint32_t size = sizeof(exe_path);
+        _NSGetExecutablePath(exe_path, &size);
+        execl(exe_path, exe_path, image_path, nullptr);
+        perror("execl failed");
+    #elif defined(OS_WINDOWS)
+        char exe_path[512];
+        GetModuleFileNameA(nullptr, exe_path, sizeof(exe_path));
+        // set env vars before spawning
+        SetEnvironmentVariableA("OMP_NUM_THREADS", threads_str);
+        SetEnvironmentVariableA("OMP_PROC_BIND",   bind_strs[s.proc_bind]);
+        SetEnvironmentVariableA("OMP_DYNAMIC",     s.dynamic ? "true" : "false");
+        SetEnvironmentVariableA("OMP_PLACES",      "cores");
+        // spawn new instance and exit current one
+        STARTUPINFOA si = {}; si.cb = sizeof(si);
+        PROCESS_INFORMATION pi = {};
+        char cmd[1024];
+        snprintf(cmd, sizeof(cmd), "\"%s\" \"%s\"", exe_path, image_path);
+        if (CreateProcessA(nullptr, cmd, nullptr, nullptr, FALSE, 0,
+                        nullptr, nullptr, &si, &pi)) {
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+            ExitProcess(0);  // exit current process
+        }
+    #endif
+
+    // re-exec with same image path argument
+    // execl replaces the current process — GLFW/ImGui cleanup won't run,
+    // but that's fine for a dev tool
+    execl(exe_path, exe_path, image_path, nullptr);
+    perror("execl failed");  // only reached if execl fails
+}   
+
 // ─────────────────────────────────────────────────────────────────────────────
 // main()
 // ─────────────────────────────────────────────────────────────────────────────
 int main(int argc, char** argv)
 {
-    const char* image_path = argc > 1 ? argv[1] : "/media/amiyaun/New Volume/cv algos/sobel_gui/rain-forest-tree-view-up_jpg.png";
+    const char* image_path = argc > 1 ? argv[1] : "/media/amiyaun/New Volume/cv algos/sobel_gui/wp4472820_jpg.jpg";
     printf("Running benchmarks on %s ...\n", image_path);
 
 
@@ -661,6 +718,9 @@ int main(int argc, char** argv)
     TexCache tc;
     bool first = true;
 
+    // declare BEFORE the render loop
+    int last_proc_bind = -1;  // -1 means "not yet set"
+
     // ── Render loop ──────────────────────────────────────────────────────────
     while (!glfwWindowShouldClose(window))
     {
@@ -682,9 +742,18 @@ int main(int argc, char** argv)
         if (rerun || data.omp_settings.needs_rerun) {
             data.omp_settings.needs_rerun = false;
             OmpSettings s = data.omp_settings;
+
+            // if proc_bind changed, we need to re-exec
+            
+            if (s.proc_bind != last_proc_bind) {
+                last_proc_bind = s.proc_bind;
+                RelaunchWithSettings(image_path, s);
+                // if we get here execl failed, fall through to normal rerun
+            }
+            last_proc_bind = s.proc_bind;
+
             data = RunBenchmarks(image_path, s);
             data.omp_settings = s;
-
             first = true;
         }
 
