@@ -1,12 +1,18 @@
 //sobel_min.c
 
-#define _GNU_SOURCE
+#if defined(__linux__)
+    #define _GNU_SOURCE
+#endif
+#if defined(__linux__)
+    #include <sched.h>
+#endif
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "sobel_min.h"
-#include <sched.h>
+
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -69,6 +75,11 @@ void sobel_avx2_omp(
 
         thread_info[tid].tid = tid;
         thread_info[tid].cpu = sched_getcpu();
+        #if defined(__linux__)
+            thread_info[tid].cpu = sched_getcpu();
+        #else
+            thread_info[tid].cpu = -1;
+        #endif
         thread_info[tid].row_start = i_start;
         thread_info[tid].row_end = i_end;
 

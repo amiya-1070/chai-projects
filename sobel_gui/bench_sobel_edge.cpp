@@ -23,9 +23,16 @@
 #define PEAK_BW  32.0
 
 static inline uint64_t now_ns(void) {
+#if defined(_WIN32) || defined(_WIN64)
+    LARGE_INTEGER freq, count;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&count);
+    return (uint64_t)(count.QuadPart * 1000000000LL / freq.QuadPart);
+#else
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+#endif
 }
 
 static void gen_image(uint8_t* img, int n) {

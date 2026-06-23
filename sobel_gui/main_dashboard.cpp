@@ -10,6 +10,23 @@
 //   gcc -c sobel_min.c -O3 -march=native -fopenmp -o sobel_min.o
 //   then add sobel_min.o to the link step
 
+#if defined(_WIN32) || defined(_WIN64)
+    #define OS_WINDOWS
+#elif defined(__APPLE__)
+    #define OS_MACOS
+#elif defined(__linux__)
+    #define OS_LINUX
+#endif
+
+#if defined(OS_WINDOWS)
+    #include <windows.h>
+    #include <intrin.h>
+#else
+    #include <unistd.h>
+    #include <sched.h>
+    #include <cpuid.h>
+#endif
+
 #include "sobel_dashboard.h"
 #include <cpuid.h>
 #include "sobel_min.h"
@@ -192,108 +209,176 @@ static std::vector<ThreadInfo> CollectThreadInfo(int H)
 // ─────────────────────────────────────────────────────────────────────────────
 
 static double ReadPeakBandwidthGBs() {
-    // Try reading from dmidecode (requires root, may not work everywhere)
-    FILE* f = popen("dmidecode -t memory 2>/dev/null | grep -i 'speed:' | grep -v 'Unknown' | head -1", "r");
+#if defined(OS_LINUX)
+    FILE* f = popen("dmidecode -t memory 2>/dev/null | grep -i 'Speed:' | grep -v 'Unknown' | head -1", "r");
     if (f) {
         int speed_mhz = 0;
         char line[128];
-        if (fgets(line, sizeof(line), f)) {
+        if (fgets(line, sizeof(line), f))
             sscanf(line, " Speed: %d MT/s", &speed_mhz);
-        }
         pclose(f);
-        if (speed_mhz > 0) {
-            // DDR: bandwidth = speed_MT/s × bus_width_bytes × channels
-            // bus width = 8 bytes (64-bit), assume dual channel
-            return (speed_mhz * 8.0 * 2.0) / 1000.0;  // GB/s
-        }
+        if (speed_mhz > 0)
+            return (speed_mhz * 8.0 * 2.0) / 1000.0;
     }
-        // Fallback: read from /sys (works without root)
-    FILE* f2 = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", "r");
-    if (f2) { fclose(f2); }  // just checking if sysfs is available
-    return 40.0;  // conservative fallback
+    return 40.0;
+#elif defined(OS_MACOS)
+    // sysctl on macOS
+    FILE* f = popen("system_profiler SPMemoryDataType 2>/dev/null | grep 'Speed:' | head -1", "r");
+    if (f) {
+        int speed_mhz = 0;
+        char line[128];
+        if (fgets(line, sizeof(line), f))
+            sscanf(line, " Speed: %d MHz", &speed_mhz);
+        pclose(f);
+        if (speed_mhz > 0)
+            return (speed_mhz * 8.0 * 2.0) / 1000.0;
+    }
+    return 40.0;
+#elif defined(OS_WINDOWS)
+    // WMI via powershell
+    FILE* f = _popen("powershell -command \"Get-WmiObject Win32_PhysicalMemory | Select-Object -First 1 Speed | ForEach-Object { $_.Speed }\"", "r");
+    if (f) {
+        int speed_mhz = 0;
+        fscanf(f, "%d", &speed_mhz);
+        _pclose(f);
+        if (speed_mhz > 0)
+            return (speed_mhz * 8.0 * 2.0) / 1000.0;
+    }
+    return 40.0;
+#else
+    return 40.0;
+#endif
 }
 
     
 
 static double ReadPeakComputeGFlops() {
-        // Step 1: get max turbo frequency from scaling_max_freq
     double max_freq_ghz = 0.0;
-    FILE* f = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", "r");
+
+#if defined(OS_LINUX)
+    FILE* f = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq", "r");
     if (f) {
         long freq_khz = 0;
         fscanf(f, "%ld", &freq_khz);
         fclose(f);
         max_freq_ghz = freq_khz / 1e6;
     }
-    if (max_freq_ghz < 0.5) max_freq_ghz = 3.5;  // fallback
+#elif defined(OS_MACOS)
+    FILE* f = popen("sysctl -n hw.cpufrequency_max 2>/dev/null", "r");
+    if (f) {
+        long freq_hz = 0;
+        fscanf(f, "%ld", &freq_hz);
+        pclose(f);
+        max_freq_ghz = freq_hz / 1e9;
+    }
+#elif defined(OS_WINDOWS)
+    FILE* f = _popen("powershell -command \"(Get-WmiObject Win32_Processor).MaxClockSpeed\"", "r");
+    if (f) {
+        int freq_mhz = 0;
+        fscanf(f, "%d", &freq_mhz);
+        _pclose(f);
+        max_freq_ghz = freq_mhz / 1e3;
+    }
+#endif
 
-        // Step 2: count logical CPUs
-    int logical_cpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    if (max_freq_ghz < 0.5) max_freq_ghz = 3.5;
 
-        // Step 3: check AVX2 support via cpuid
+    int logical_cpus = (int)sysconf(_SC_NPROCESSORS_ONLN);  // POSIX
+#if defined(OS_WINDOWS)
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    logical_cpus = (int)si.dwNumberOfProcessors;
+#endif
+
     unsigned int eax, ebx, ecx, edx;
     bool has_avx2 = false;
+#if !defined(OS_WINDOWS)
     if (__get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx))
         has_avx2 = (ebx >> 5) & 1;
+#else
+    int cpuinfo[4];
+    __cpuidex(cpuinfo, 7, 0);
+    has_avx2 = (cpuinfo[1] >> 5) & 1;
+#endif
 
-        // Step 4: ops per cycle per core
-        // AVX2 int16: 2 FMAs × 16 elements = 32 ops/cycle (theoretical)
-        // but for integer add/sub (no FMA), it's 2 ops × 16 elements = 32 ops/cycle
     double ops_per_cycle = has_avx2 ? 32.0 : 8.0;
-
-    return logical_cpus * ops_per_cycle * max_freq_ghz;  // GOps/s
+    return logical_cpus * ops_per_cycle * max_freq_ghz;
 }
+
 
 static double ComputePEWeightRatio(int* p_count_out, int* e_count_out) {
     int num_cpus = (int)sysconf(_SC_NPROCESSORS_ONLN);
-    
-    // read max freq for each logical CPU
+#if defined(OS_WINDOWS)
+    SYSTEM_INFO si; GetSystemInfo(&si);
+    num_cpus = (int)si.dwNumberOfProcessors;
+#endif
+
+    *p_count_out = num_cpus;
+    *e_count_out = 0;
+
+#if defined(OS_LINUX)
     std::vector<long> max_freqs(num_cpus, 0);
     long overall_max = 0;
-    
+
     for (int i = 0; i < num_cpus; i++) {
         char path[128];
         snprintf(path, sizeof(path),
             "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq", i);
         FILE* f = fopen(path, "r");
-        if (!f) {
-            // sysfs unavailable entirely, return uniform
-            *p_count_out = num_cpus;
-            *e_count_out = 0;
-            return 1.0;
-        }
+        if (!f) { return 1.0; }
         fscanf(f, "%ld", &max_freqs[i]);
         fclose(f);
-        if (max_freqs[i] > overall_max)
-            overall_max = max_freqs[i];
+        if (max_freqs[i] > overall_max) overall_max = max_freqs[i];
     }
-    
-    // cores within 5% of the max freq are P-cores, rest are E-cores
+
     long p_thresh = (long)(overall_max * 0.95);
     long p_freq_sum = 0, e_freq_sum = 0;
     int  p_count = 0, e_count = 0;
-    
+
     for (int i = 0; i < num_cpus; i++) {
-        if (max_freqs[i] >= p_thresh) {
-            p_freq_sum += max_freqs[i];
-            p_count++;
-        } else {
-            e_freq_sum += max_freqs[i];
-            e_count++;
-        }
+        if (max_freqs[i] >= p_thresh) { p_freq_sum += max_freqs[i]; p_count++; }
+        else                          { e_freq_sum += max_freqs[i]; e_count++; }
     }
-    
+
     *p_count_out = p_count;
     *e_count_out = e_count;
-    
-    if (e_count == 0 || p_count == 0) return 1.0;  // homogeneous
-    
+
+    if (e_count == 0 || p_count == 0) return 1.0;
+
     double avg_p = (double)p_freq_sum / p_count;
     double avg_e = (double)e_freq_sum / e_count;
- // after computing avg_p / avg_e:
-    const double ipc_factor = 1.2;  // P-cores ~20% better IPC than E-cores for AVX2 workloads
-    return (avg_p / avg_e) * ipc_factor;  // ≈ 1.343 × 1.2 ≈ 1.61, close to your measured 1.6
+    const double ipc_factor = 1.2;
+    return (avg_p / avg_e) * ipc_factor;
+
+#elif defined(OS_MACOS)
+    // macOS doesn't expose per-core freq easily; check for hybrid via sysctl
+    FILE* f = popen("sysctl -n hw.nperflevels 2>/dev/null", "r");
+    if (f) {
+        int nlevels = 0;
+        fscanf(f, "%d", &nlevels);
+        pclose(f);
+        if (nlevels >= 2) {
+            // Apple Silicon or hybrid — read p/e counts from sysctl
+            int pcount = 0, ecount = 0;
+            FILE* fp = popen("sysctl -n hw.perflevel0.logicalcpu 2>/dev/null", "r");
+            if (fp) { fscanf(fp, "%d", &pcount); pclose(fp); }
+            FILE* fe = popen("sysctl -n hw.perflevel1.logicalcpu 2>/dev/null", "r");
+            if (fe) { fscanf(fe, "%d", &ecount); pclose(fe); }
+            *p_count_out = pcount;
+            *e_count_out = ecount;
+            // Apple M-series: P/E ratio is roughly 3.2GHz/2.1GHz ≈ 1.5
+            return (pcount > 0 && ecount > 0) ? 1.5 : 1.0;
+        }
+    }
+    return 1.0;  // homogeneous Intel Mac
+
+#else
+    // Windows or unknown: no reliable per-core freq without WMI complexity
+    // assume homogeneous
+    return 1.0;
+#endif
 }
+
 
 static BuildInfo MakeBuildInfo()
 {
