@@ -813,10 +813,46 @@ void SobelDashboard_Draw(DashboardData& d, TexCache& tc, bool refresh_textures)
     ImGui::DockSpace(dsid, ImVec2(0,0), ImGuiDockNodeFlags_PassthruCentralNode);
     ImGui::End();
 
-    if (ImGui::Begin("OMP Settings")) {
-        DrawOmpSettingsPanel(d.omp_settings);
+    // near the top of SobelDashboard_Draw, after the dockspace
+    if (d.show_omp_popup)
+        ImGui::OpenPopup("OMPSettingsPopup");
+
+    ImGui::SetNextWindowSize(ImVec2(400, 260), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(),
+                            ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("OMPSettingsPopup", nullptr,
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+    {
+        if (!d.benchmark_running) {
+            DrawOmpSettingsPanel(d.omp_settings);
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+            if (ImGui::Button("Run", ImVec2(120, 0))) {
+                d.omp_settings.needs_rerun = true;
+                d.benchmark_running = true;
+                d.show_omp_popup = false;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                d.show_omp_popup = false;
+                ImGui::CloseCurrentPopup();
+            }
+        } else {
+            ImGui::Spacing();
+            ImGui::TextColored({1.f,0.8f,0.2f,1.f}, "Running benchmarks, please wait...");
+            ImGui::Spacing();
+            static int dot_frame = 0;
+            dot_frame = (dot_frame + 1) % 120;
+            const char* dots[] = {"   ", ".  ", ".. ", "..."};
+            ImGui::Text("Computing%s", dots[dot_frame / 30]);
+            if (!d.benchmark_running)
+                ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
     }
-    ImGui::End();
+
+    
 
     // ── Window : Images ───────────────────────────────────────────────────────
     if (ImGui::Begin("Images")) {

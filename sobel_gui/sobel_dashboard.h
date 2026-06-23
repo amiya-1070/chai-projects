@@ -136,4 +136,9 @@ struct DashboardData {
 
     // Roofline
     double arithmetic_intensity = 0.0;  // FLOP/byte — compute manually or estimate
+
+    // ribbon state
+    char        image_path_buf[512] = {};   // editable path buffer
+    bool        show_omp_popup      = false;
+    bool        benchmark_running   = false;
 };

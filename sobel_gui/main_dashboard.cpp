@@ -683,6 +683,9 @@ int main(int argc, char** argv)
 
     ApplyOmpSettings(current_settings);
     DashboardData data = RunBenchmarks(image_path, current_settings);
+
+    // initialize image path buffer from argv
+    strncpy(data.image_path_buf, image_path, sizeof(data.image_path_buf)-1);
     
     data.omp_settings = current_settings;
     
@@ -732,29 +735,71 @@ int main(int argc, char** argv)
 
         // Expose a Re-run button in the menu bar
         bool rerun = false;
+        // ── Ribbon ───────────────────────────────────────────────────────────────
         if (ImGui::BeginMainMenuBar()) {
-            if (ImGui::BeginMenu("Benchmark")) {
-                if (ImGui::MenuItem("Re-run benchmarks")) rerun = true;
-                ImGui::EndMenu();
+
+            // image picker
+            ImGui::SetNextItemWidth(400.f);
+            if (ImGui::InputText("##imgpath", data.image_path_buf,
+                                sizeof(data.image_path_buf),
+                                ImGuiInputTextFlags_EnterReturnsTrue)) {
+                // user pressed Enter — trigger rerun with new path
+                image_path = data.image_path_buf;
+                rerun = true;
             }
+            ImGui::SameLine();
+            if (ImGui::Button("Load Image")) {
+                image_path = data.image_path_buf;
+                rerun = true;
+            }
+
+            ImGui::SameLine(0, 20);
+
+            // OMP settings button
+            if (ImGui::Button("OMP Settings")) {
+                data.show_omp_popup = true;
+                ImGui::OpenPopup("OMPSettingsPopup");
+            }
+
+            ImGui::SameLine(0, 20);
+
+            if (ImGui::Button("Re-run")) rerun = true;
+
+            // show status while running
+            if (data.benchmark_running) {
+                ImGui::SameLine(0, 20);
+                ImGui::TextColored({1.f,0.8f,0.2f,1.f}, "Running benchmarks...");
+            }
+
             ImGui::EndMainMenuBar();
         }
+        
+        
+
+        // ── Trigger rerun ─────────────────────────────────────────────────────────
         if (rerun || data.omp_settings.needs_rerun) {
             data.omp_settings.needs_rerun = false;
-            OmpSettings s = data.omp_settings;
+            data.benchmark_running = true;
 
-            // if proc_bind changed, we need to re-exec
+            OmpSettings s = data.omp_settings;
+            char path_copy[512];
+            strncpy(path_copy, data.image_path_buf, sizeof(path_copy)-1);
+
             
             if (s.proc_bind != last_proc_bind) {
-                last_proc_bind = s.proc_bind;
-                RelaunchWithSettings(image_path, s);
-                // if we get here execl failed, fall through to normal rerun
+                last_proc_bind = s.proc_bind;  // update BEFORE relaunch
+                RelaunchWithSettings(path_copy, s);
             }
             last_proc_bind = s.proc_bind;
 
-            data = RunBenchmarks(image_path, s);
+            data = RunBenchmarks(path_copy, s);
             data.omp_settings = s;
+            strncpy(data.image_path_buf, path_copy, sizeof(data.image_path_buf)-1);
+
+            data.benchmark_running = false;  // done
+            ImGui::CloseCurrentPopup();      // close popup now that results are ready
             first = true;
+            rerun = false;
         }
 
         SobelDashboard_Draw(data, tc, first);
