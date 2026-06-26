@@ -1,0 +1,43 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/llama_dashboard.dir/src/benchmark_panel.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/src/benchmark_panel.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/src/config_panel.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/src/config_panel.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/src/dashboard.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/src/dashboard.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/src/inference_panel.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/src/inference_panel.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/src/main.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/src/main.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/src/process_utils.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/src/process_utils.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/src/storage.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/src/storage.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/src/telemetry.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/src/telemetry.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o"
+  "CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o.d"
+  "llama_dashboard"
+  "llama_dashboard.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang C CXX)
+  include(CMakeFiles/llama_dashboard.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

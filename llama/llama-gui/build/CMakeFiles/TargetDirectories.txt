@@ -1,0 +1,3 @@
+/media/amiyaun/New Volume/llama-gui/build/CMakeFiles/llama_dashboard.dir
+/media/amiyaun/New Volume/llama-gui/build/CMakeFiles/edit_cache.dir
+/media/amiyaun/New Volume/llama-gui/build/CMakeFiles/rebuild_cache.dir
