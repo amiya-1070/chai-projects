@@ -1,3 +1,4 @@
+//storage.cpp
 #include "storage.h"
 #include <ctime>
 #include <cstring>
@@ -18,13 +19,6 @@ Storage::~Storage() {
     close();
 }
 
-bool Storage::open(const std::string& db_path) {
-    if (sqlite3_open(db_path.c_str(), &m_db) != SQLITE_OK) {
-        m_db = nullptr;
-        return false;
-    }
-    return create_tables();
-}
 
 void Storage::close() {
     if (m_db) {
@@ -63,6 +57,31 @@ bool Storage::create_tables() {
     return true;
 }
 
+bool Storage::migrate_schema() {
+    // SQLite has no "ALTER TABLE ADD COLUMN IF NOT EXISTS", so just try
+    // and swallow the "duplicate column" error if it's already been run.
+    const char* alters[] = {
+        "ALTER TABLE bench_runs ADD COLUMN model_size_b REAL NOT NULL DEFAULT 0;",
+        "ALTER TABLE bench_runs ADD COLUMN quant TEXT NOT NULL DEFAULT '';",
+        "ALTER TABLE bench_runs ADD COLUMN peak_rss_mb REAL NOT NULL DEFAULT 0;"
+    };
+    for (const char* sql : alters) {
+        char* err = nullptr;
+        sqlite3_exec(m_db, sql, nullptr, nullptr, &err);
+        sqlite3_free(err); // ignore errors — column may already exist
+    }
+    return true;
+}
+
+bool Storage::open(const std::string& db_path) {
+    if (sqlite3_open(db_path.c_str(), &m_db) != SQLITE_OK) {
+        m_db = nullptr;
+        return false;
+    }
+    if (!create_tables()) return false;
+    return migrate_schema();
+}
+
 bool Storage::insert_bench(BenchRecord& record) {
     if (!m_db) return false;
     record.timestamp = iso_timestamp();
@@ -72,8 +91,9 @@ bool Storage::insert_bench(BenchRecord& record) {
             (timestamp, model_name, n_threads, cpu_mask, flash_attn,
              mmap_off, kv_type, n_prompt, n_gen,
              pp_tps, pp_std, tg_tps, tg_std,
-             avg_temp_c, avg_power_w, notes)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+             avg_temp_c, avg_power_w, notes,
+             model_size_b, quant, peak_rss_mb)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
     )";
 
     sqlite3_stmt* stmt = nullptr;
@@ -96,6 +116,9 @@ bool Storage::insert_bench(BenchRecord& record) {
     sqlite3_bind_double(stmt, 14, record.avg_temp_c);
     sqlite3_bind_double(stmt, 15, record.avg_power_w);
     sqlite3_bind_text (stmt, 16, record.notes.c_str(),      -1, SQLITE_TRANSIENT);
+    sqlite3_bind_double(stmt, 17, record.model_size_b);
+    sqlite3_bind_text (stmt, 18, record.quant.c_str(),      -1, SQLITE_TRANSIENT);
+    sqlite3_bind_double(stmt, 19, record.peak_rss_mb);
 
     bool ok = (sqlite3_step(stmt) == SQLITE_DONE);
     if (ok) record.id = sqlite3_last_insert_rowid(m_db);
@@ -122,6 +145,9 @@ static BenchRecord row_to_record(sqlite3_stmt* stmt) {
     r.avg_temp_c  = (float)sqlite3_column_double(stmt, 14);
     r.avg_power_w = (float)sqlite3_column_double(stmt, 15);
     r.notes       = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 16));
+    r.model_size_b = (float)sqlite3_column_double(stmt, 17);
+    r.quant        = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 18));
+    r.peak_rss_mb  = (float)sqlite3_column_double(stmt, 19);
     return r;
 }
 
@@ -132,7 +158,7 @@ std::vector<BenchRecord> Storage::get_all_bench() const {
     const char* sql =
         "SELECT id,timestamp,model_name,n_threads,cpu_mask,flash_attn,"
         "mmap_off,kv_type,n_prompt,n_gen,pp_tps,pp_std,tg_tps,tg_std,"
-        "avg_temp_c,avg_power_w,notes "
+        "avg_temp_c,avg_power_w,notes,model_size_b,quant,peak_rss_mb "
         "FROM bench_runs ORDER BY id DESC;";
 
     sqlite3_stmt* stmt = nullptr;
@@ -152,8 +178,8 @@ bool Storage::get_bench(int64_t id, BenchRecord& out) const {
     const char* sql =
         "SELECT id,timestamp,model_name,n_threads,cpu_mask,flash_attn,"
         "mmap_off,kv_type,n_prompt,n_gen,pp_tps,pp_std,tg_tps,tg_std,"
-        "avg_temp_c,avg_power_w,notes "
-        "FROM bench_runs WHERE id=?;";
+        "avg_temp_c,avg_power_w,notes,model_size_b,quant,peak_rss_mb "
+        "FROM bench_runs ORDER BY id DESC;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr) != SQLITE_OK)

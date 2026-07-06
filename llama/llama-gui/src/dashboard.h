@@ -1,9 +1,11 @@
+//dashboard.h
 #pragma once
 #include "config_panel.h"
 #include "benchmark_panel.h"
 #include "inference_panel.h"
 #include "telemetry.h"
 #include "storage.h"
+#include "model_panel_sweep.h"
 
 class Dashboard {
 public:
@@ -31,6 +33,7 @@ private:
     InferencePanel      m_infer;
     TelemetryCollector  m_telemetry;
     Storage             m_storage;
+    ModelSweepPanel m_model_sweep;
 
     // Window visibility flags
     bool m_show_config    = true;

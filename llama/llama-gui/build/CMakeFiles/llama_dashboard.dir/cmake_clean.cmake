@@ -9,6 +9,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/llama_dashboard.dir/src/inference_panel.cpp.o.d"
   "CMakeFiles/llama_dashboard.dir/src/main.cpp.o"
   "CMakeFiles/llama_dashboard.dir/src/main.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/src/model_panel_sweep.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/src/model_panel_sweep.cpp.o.d"
   "CMakeFiles/llama_dashboard.dir/src/process_utils.cpp.o"
   "CMakeFiles/llama_dashboard.dir/src/process_utils.cpp.o.d"
   "CMakeFiles/llama_dashboard.dir/src/storage.cpp.o"

@@ -38,6 +38,7 @@ set(SOURCES
     src/telemetry.cpp
     src/inference_panel.cpp
     src/storage.cpp
+    src/model_panel_sweep.cpp
     src/process_utils.cpp
     third_party/sqlite3.c
 )

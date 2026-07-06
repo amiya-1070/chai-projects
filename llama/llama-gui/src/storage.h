@@ -1,3 +1,4 @@
+//storage.h
 #pragma once
 #include <string>
 #include <vector>
@@ -7,8 +8,10 @@
 // One complete benchmark run record
 struct BenchRecord {
     int64_t     id          = 0;
-    std::string timestamp;          // ISO8601
+    std::string timestamp;
     std::string model_name;
+    float       model_size_b = 0.0f;   // NEW
+    std::string quant        = "";     // NEW
     int         n_threads   = 0;
     std::string cpu_mask;
     bool        flash_attn  = false;
@@ -16,12 +19,13 @@ struct BenchRecord {
     std::string kv_type;
     int         n_prompt    = 0;
     int         n_gen       = 0;
-    float       pp_tps      = 0.0f; // prompt processing tokens/sec
+    float       pp_tps      = 0.0f;
     float       pp_std      = 0.0f;
-    float       tg_tps      = 0.0f; // token generation tokens/sec
+    float       tg_tps      = 0.0f;
     float       tg_std      = 0.0f;
     float       avg_temp_c  = 0.0f;
     float       avg_power_w = 0.0f;
+    float       peak_rss_mb = 0.0f;    // NEW
     std::string notes;
 };
 
@@ -54,6 +58,8 @@ public:
 
 private:
     bool create_tables();
+
+    bool migrate_schema(); 
 
     sqlite3* m_db = nullptr;
 };

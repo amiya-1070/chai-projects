@@ -249,6 +249,30 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/llama_dashboard.dir/build.make CMakeFiles/llama_dashboard.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/model_panel_sweep.o: src/model_panel_sweep.cpp.o
+.PHONY : src/model_panel_sweep.o
+
+# target to build an object file
+src/model_panel_sweep.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/llama_dashboard.dir/build.make CMakeFiles/llama_dashboard.dir/src/model_panel_sweep.cpp.o
+.PHONY : src/model_panel_sweep.cpp.o
+
+src/model_panel_sweep.i: src/model_panel_sweep.cpp.i
+.PHONY : src/model_panel_sweep.i
+
+# target to preprocess a source file
+src/model_panel_sweep.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/llama_dashboard.dir/build.make CMakeFiles/llama_dashboard.dir/src/model_panel_sweep.cpp.i
+.PHONY : src/model_panel_sweep.cpp.i
+
+src/model_panel_sweep.s: src/model_panel_sweep.cpp.s
+.PHONY : src/model_panel_sweep.s
+
+# target to generate assembly for a file
+src/model_panel_sweep.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/llama_dashboard.dir/build.make CMakeFiles/llama_dashboard.dir/src/model_panel_sweep.cpp.s
+.PHONY : src/model_panel_sweep.cpp.s
+
 src/process_utils.o: src/process_utils.cpp.o
 .PHONY : src/process_utils.o
 
@@ -561,6 +585,9 @@ help:
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/model_panel_sweep.o"
+	@echo "... src/model_panel_sweep.i"
+	@echo "... src/model_panel_sweep.s"
 	@echo "... src/process_utils.o"
 	@echo "... src/process_utils.i"
 	@echo "... src/process_utils.s"

@@ -37,6 +37,8 @@ bool Dashboard::init() {
         }
     }
     m_bench.set_storage(&m_storage);
+    m_model_sweep.set_storage(&m_storage); 
+    m_model_sweep.set_telemetry(&m_telemetry);
 
     return true;
 }
@@ -263,6 +265,11 @@ void Dashboard::render_main_tabs() {
 
         if (ImGui::BeginTabItem("Benchmark")) {
             m_bench.render(m_config.config());
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Model Size Sweep")) {
+            m_model_sweep.render(m_config.config());
             ImGui::EndTabItem();
         }
 
