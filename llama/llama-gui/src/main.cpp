@@ -36,14 +36,29 @@ int main(int, char**) {
     // ImGui init
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImPlot::CreateContext();
-
     ImGuiIO& io = ImGui::GetIO();
+    ImGuiStyle& style = ImGui::GetStyle();
+    
+
+    // Sizing
+    style.FramePadding      = ImVec2(8, 6);   // button/input inner padding
+    style.ItemSpacing       = ImVec2(8, 6);   // space between widgets
+    style.WindowPadding     = ImVec2(10, 10);
+    style.ScrollbarSize     = 14.0f;
+    style.WindowRounding    = 4.0f;
+    style.FrameRounding     = 4.0f;           // rounded button corners
+
+    // Colors — indexed by ImGuiCol_*
+    style.Colors[ImGuiCol_Button]        = ImVec4(0.20f, 0.45f, 0.20f, 1.00f);
+    style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.30f, 0.60f, 0.30f, 1.00f);
+    style.Colors[ImGuiCol_ButtonActive]  = ImVec4(0.15f, 0.35f, 0.15f, 1.00f);
+
+    
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     // Dark theme with slight customization
     ImGui::StyleColorsDark();
-    ImGuiStyle& style = ImGui::GetStyle();
+    
     style.WindowRounding    = 4.0f;
     style.FrameRounding     = 3.0f;
     style.ScrollbarRounding = 3.0f;

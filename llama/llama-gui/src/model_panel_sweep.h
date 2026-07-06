@@ -31,6 +31,14 @@ struct ModelSweepRun {
     bool        complete     = false;
 };
 
+// Per-model raw perf stat output
+struct PerfCaptureResult {
+    std::string label;       // "3B", "7B", "14B"
+    std::string raw_output;  // full perf stat text
+};
+
+
+
 class ModelSweepPanel {
 public:
     ModelSweepPanel();
@@ -52,6 +60,9 @@ private:
     void render_model_list();
     void render_results_table();
     void render_scaling_plot();
+    
+    void render_perf_tab();
+    std::vector<PerfCaptureResult> m_perf_results;
 
     std::thread       m_thread;
     std::atomic<bool> m_running{false};

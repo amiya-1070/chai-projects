@@ -158,29 +158,59 @@ void ModelSweepPanel::sweep_thread_func(DashboardConfig cfg) {
             rec.notes        = run.oom ? "OOM/crash suspected" : "";
             m_storage->insert_bench(rec);
         }
+
+        {
+            std::string perf_cmd = "perf stat --no-scale -d -d -d " + cmd + " 2>&1";
+
+            std::string perf_output;
+            stream_command(perf_cmd, [&](const std::string& line) {
+                perf_output += line + "\n";
+                {
+                    std::lock_guard<std::mutex> lk(m_mutex);
+                    m_log.push_back("[perf " + spec.label + "] " + line);
+                    if ((int)m_log.size() > MAX_LOG) m_log.pop_front();
+                }
+            }, m_cancel);
+
+            PerfCaptureResult pr;
+            pr.label = spec.label;
+            pr.raw_output = perf_output;
+            std::lock_guard<std::mutex> lk(m_mutex);
+            m_perf_results.push_back(pr);
+        }
     }
     m_running = false;
 }
 
 void ModelSweepPanel::render(const DashboardConfig& cfg) {
-    render_controls(cfg);
-    ImGui::Separator();
-    render_model_list();
-    ImGui::Separator();
+    if (ImGui::BeginTabBar("model_sweep_tabs")) {
+        if (ImGui::BeginTabItem("Sweep")) {
+            render_controls(cfg);
+            ImGui::Separator();
+            render_model_list();
+            ImGui::Separator();
 
-    std::lock_guard<std::mutex> lk(m_mutex);
-    if (!m_log.empty()) {
-        ImGui::TextColored({0.4f,0.9f,0.4f,1.0f}, "Live Output");
-        ImGui::BeginChild("sweep_log", ImVec2(0, 250), true);
-        for (auto& line : m_log) ImGui::TextUnformatted(line.c_str());
-        if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-            ImGui::SetScrollHereY(1.0f);
-        ImGui::EndChild();
-        ImGui::Separator();
+            std::lock_guard<std::mutex> lk(m_mutex);
+            if (!m_log.empty()) {
+                ImGui::TextColored({0.4f,0.9f,0.4f,1.0f}, "Live Output");
+                ImGui::BeginChild("sweep_log", ImVec2(0, 150), true);
+                for (auto& line : m_log) ImGui::TextUnformatted(line.c_str());
+                if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+                    ImGui::SetScrollHereY(1.0f);
+                ImGui::EndChild();
+                ImGui::Separator();
+            }
+
+            render_results_table();
+            render_scaling_plot();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Perf Stat")) {
+            render_perf_tab();
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
     }
-
-    render_results_table();
-    render_scaling_plot();
 }
 
 void ModelSweepPanel::render_controls(const DashboardConfig& cfg) {
@@ -302,5 +332,26 @@ void ModelSweepPanel::render_scaling_plot() {
         ImPlot::PlotLine("TG t/s", sizes.data(), tg_vals.data(), (int)sizes.size());
         ImPlot::PlotScatter("TG t/s", sizes.data(), tg_vals.data(), (int)sizes.size());
         ImPlot::EndPlot();
+    }
+}
+
+void ModelSweepPanel::render_perf_tab() {
+    std::lock_guard<std::mutex> lk(m_mutex);
+    if (m_perf_results.empty()) {
+        ImGui::TextDisabled("No perf stat data yet. Run the sweep first.");
+        return;
+    }
+
+    if (ImGui::BeginTabBar("perf_model_tabs")) {
+        for (auto& pr : m_perf_results) {
+            if (ImGui::BeginTabItem(pr.label.c_str())) {
+                ImGui::BeginChild(("perf_child_" + pr.label).c_str(),
+                                   ImVec2(0, -1), true);   // taller — was 300
+                ImGui::TextUnformatted(pr.raw_output.c_str());
+                ImGui::EndChild();
+                ImGui::EndTabItem();
+            }
+        }
+        ImGui::EndTabBar();
     }
 }
