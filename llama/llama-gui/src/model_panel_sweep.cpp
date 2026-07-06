@@ -64,6 +64,10 @@ BenchResult parse_bench_line(const std::string& line) {
 
 void ModelSweepPanel::start_sweep(const DashboardConfig& cfg) {
     if (m_running || m_models.empty()) return;
+
+    // Clean up any previous thread that finished but was never joined
+    if (m_thread.joinable()) m_thread.join();
+
     m_cancel = false;
     m_results.clear();
     m_progress = 0;
