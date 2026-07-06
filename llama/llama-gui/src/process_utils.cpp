@@ -3,6 +3,26 @@
 #include <stdexcept>
 #include <sstream>
 #include <array>
+#include <fstream>
+
+MemSnapshot read_meminfo() {
+    MemSnapshot m;
+    std::ifstream f("/proc/meminfo");
+    std::string key;
+    long value_kb;
+    std::string unit;
+    long swap_total = 0, swap_free = 0;
+
+    while (f >> key >> value_kb >> unit) {
+        if (key == "MemTotal:")          m.total_mb     = value_kb / 1024.0f;
+        else if (key == "MemAvailable:") m.available_mb = value_kb / 1024.0f;
+        else if (key == "SwapTotal:")    swap_total = value_kb;
+        else if (key == "SwapFree:")     swap_free  = value_kb;
+    }
+    m.used_mb      = m.total_mb - m.available_mb;
+    m.swap_used_mb = (swap_total - swap_free) / 1024.0f;
+    return m;
+}
 
 std::string run_command(const std::string& cmd) {
     std::string result;

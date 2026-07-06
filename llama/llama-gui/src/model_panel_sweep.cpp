@@ -18,14 +18,16 @@ ModelSweepPanel::~ModelSweepPanel() {
 // a private method on BenchmarkPanel, this is a local copy. Consider lifting
 // parse_bench_line/is_bench_line to a free function in process_utils if you
 // want a single source of truth (recommend doing this — see note below).
-static bool is_bench_line(const std::string& line) {
-    return !line.empty() && line[0] == '|'
-        && line.find("llama") != std::string::npos;
+#include <sstream>
+
+bool is_bench_line(const std::string& line) {
+    return !line.empty() && line[0] == '|';
 }
 
-static BenchResult parse_bench_line(const std::string& line) {
+BenchResult parse_bench_line(const std::string& line) {
     BenchResult r;
     if (line.empty() || line[0] != '|') return r;
+
     std::vector<std::string> cols;
     std::istringstream ss(line);
     std::string tok;
@@ -34,22 +36,29 @@ static BenchResult parse_bench_line(const std::string& line) {
         size_t e = tok.find_last_not_of(" \t");
         cols.push_back(s != std::string::npos ? tok.substr(s, e - s + 1) : "");
     }
+
     if (cols.size() < 12) return r;
+
     std::string test_col = cols[10];
     std::string tps_col  = cols[11];
     if (test_col.empty() || tps_col.empty()) return r;
-    if (test_col.find("test") != std::string::npos) return r;
-    float tps = 0.0f, std = 0.0f;
+    if (test_col.find("test") != std::string::npos) return r; // header row
+
+    float tps = 0.0f, std_val = 0.0f;
     size_t pm = tps_col.find("±");
     if (pm != std::string::npos) {
         try {
-            tps = std::stof(tps_col.substr(0, pm));
-            std = std::stof(tps_col.substr(pm + 3));
+            tps     = std::stof(tps_col.substr(0, pm));
+            std_val = std::stof(tps_col.substr(pm + 3)); // ± is 3 bytes UTF-8
         } catch (...) { return r; }
     } else {
         try { tps = std::stof(tps_col); } catch (...) { return r; }
     }
-    r.test = test_col; r.tps = tps; r.std = std; r.valid = true;
+
+    r.test  = test_col;
+    r.tps   = tps;
+    r.std   = std_val;
+    r.valid = true;
     return r;
 }
 
@@ -68,13 +77,18 @@ void ModelSweepPanel::sweep_thread_func(DashboardConfig cfg) {
 
         BenchParams params = cfg.to_bench_params();
         params.model_path = spec.path;
-        params.kv_type = spec.quant == "F16" ? "f16" : "q8_0"; // KV cache type independent of weight quant; adjust if you sweep this too
+        params.kv_type = spec.quant == "F16" ? "f16" : "q8_0";
         std::string cmd = build_bench_command(params);
 
         ModelSweepRun run;
         run.spec = spec;
 
+        // All of these need to be declared HERE, before the lambda, so the
+        // lambda can capture them by reference and the code after
+        // stream_command() can read the final accumulated values.
         std::vector<float> temps, powers;
+        std::vector<float> ram_used_samples, swap_samples;
+        float peak_ram_mb = 0.0f;
 
         int exit_code = stream_command(cmd, [&](const std::string& line) {
             {
@@ -87,6 +101,12 @@ void ModelSweepPanel::sweep_thread_func(DashboardConfig cfg) {
                 temps.push_back(s.pkg_temp_c);
                 powers.push_back(s.pkg_power_w);
             }
+
+            MemSnapshot mem = read_meminfo();
+            ram_used_samples.push_back(mem.used_mb);
+            swap_samples.push_back(mem.swap_used_mb);
+            peak_ram_mb = std::max(peak_ram_mb, mem.used_mb);
+
             if (is_bench_line(line)) {
                 BenchResult r = parse_bench_line(line);
                 if (r.valid) {
@@ -96,10 +116,6 @@ void ModelSweepPanel::sweep_thread_func(DashboardConfig cfg) {
             }
         }, m_cancel);
 
-        // Nonzero exit with no valid tg result usually means OOM/crash —
-        // llama-bench doesn't have a clean "out of memory" exit code, so
-        // this is a heuristic. Worth checking dmesg/journalctl for OOM-killer
-        // entries after a run if you see oom=true unexpectedly.
         run.oom = (exit_code != 0 && !run.tg.valid);
 
         if (!temps.empty())
@@ -107,11 +123,12 @@ void ModelSweepPanel::sweep_thread_func(DashboardConfig cfg) {
         if (!powers.empty())
             run.avg_power_w = std::accumulate(powers.begin(), powers.end(), 0.0f) / powers.size();
 
-        struct rusage ru;
-        if (getrusage(RUSAGE_CHILDREN, &ru) == 0)
-            run.peak_rss_mb = ru.ru_maxrss / 1024.0f; // ru_maxrss is KB on Linux
+        run.peak_rss_mb  = peak_ram_mb;
+        run.peak_swap_mb = swap_samples.empty() ? 0.0f
+            : *std::max_element(swap_samples.begin(), swap_samples.end());
 
         run.complete = true;
+
 
         {
             std::lock_guard<std::mutex> lk(m_mutex);
@@ -154,7 +171,7 @@ void ModelSweepPanel::render(const DashboardConfig& cfg) {
     std::lock_guard<std::mutex> lk(m_mutex);
     if (!m_log.empty()) {
         ImGui::TextColored({0.4f,0.9f,0.4f,1.0f}, "Live Output");
-        ImGui::BeginChild("sweep_log", ImVec2(0, 150), true);
+        ImGui::BeginChild("sweep_log", ImVec2(0, 250), true);
         for (auto& line : m_log) ImGui::TextUnformatted(line.c_str());
         if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
             ImGui::SetScrollHereY(1.0f);
@@ -222,14 +239,15 @@ void ModelSweepPanel::render_results_table() {
         ImGui::TextDisabled("No sweep results yet.");
         return;
     }
-    if (ImGui::BeginTable("size_sweep_table", 7,
+    if (ImGui::BeginTable("size_sweep_table", 8,   // was 7
         ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
     {
         ImGui::TableSetupColumn("Model");
         ImGui::TableSetupColumn("Quant");
         ImGui::TableSetupColumn("PP t/s");
         ImGui::TableSetupColumn("TG t/s");
-        ImGui::TableSetupColumn("Peak RSS (MB)");
+        ImGui::TableSetupColumn("Peak RAM (MB)");
+        ImGui::TableSetupColumn("Peak Swap (MB)");   // NEW
         ImGui::TableSetupColumn("Temp C");
         ImGui::TableSetupColumn("Status");
         ImGui::TableHeadersRow();
@@ -247,8 +265,14 @@ void ModelSweepPanel::render_results_table() {
             ImGui::TableSetColumnIndex(4);
             ImGui::Text("%.0f", r.peak_rss_mb);
             ImGui::TableSetColumnIndex(5);
-            ImGui::Text("%.1f", r.avg_temp_c);
+            // Highlight red if swap was actually used — that's the real "thrashing" signal
+            if (r.peak_swap_mb > 10.0f)
+                ImGui::TextColored({0.9f,0.3f,0.3f,1.0f}, "%.0f", r.peak_swap_mb);
+            else
+                ImGui::Text("%.0f", r.peak_swap_mb);
             ImGui::TableSetColumnIndex(6);
+            ImGui::Text("%.1f", r.avg_temp_c);
+            ImGui::TableSetColumnIndex(7);
             if (r.oom)
                 ImGui::TextColored({0.9f,0.3f,0.3f,1.0f}, "OOM/crash");
             else

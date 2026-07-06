@@ -17,60 +17,6 @@ static bool starts_with(const std::string& s, const std::string& prefix) {
         && s.compare(0, prefix.size(), prefix) == 0;
 }
 
-// Parse a llama-bench markdown table row:
-// | llama 1B F16 | 2.30 GiB | 1.24 B | CPU | 8 | q8_0 | q8_0 | 1 | 0 | pp512 | 30.61 ± 0.08 |
-BenchResult BenchmarkPanel::parse_bench_line(const std::string& line) {
-    BenchResult r;
-    if (line.empty() || line[0] != '|') return r;
-
-    // Split by '|'
-    std::vector<std::string> cols;
-    std::istringstream ss(line);
-    std::string tok;
-    while (std::getline(ss, tok, '|')) {
-        // trim whitespace
-        size_t s = tok.find_first_not_of(" \t");
-        size_t e = tok.find_last_not_of(" \t");
-        if (s != std::string::npos)
-            cols.push_back(tok.substr(s, e - s + 1));
-        else
-            cols.push_back("");
-    }
-
-    // Need at least 12 columns (0=empty, 1=model, ..., 10=test, 11=t/s)
-    if (cols.size() < 12) return r;
-
-    std::string test_col = cols[10]; // e.g. "pp512" or "tg200"
-    std::string tps_col  = cols[11]; // e.g. "30.61 ± 0.08"
-
-    if (test_col.empty() || tps_col.empty()) return r;
-    if (test_col.find("test") != std::string::npos) return r; // header row
-
-    // Parse "30.61 ± 0.08"
-    float tps = 0.0f, std = 0.0f;
-    size_t pm = tps_col.find("±");
-    if (pm != std::string::npos) {
-        std::string tps_s = tps_col.substr(0, pm);
-        std::string std_s = tps_col.substr(pm + 3); // ± is 3 bytes UTF-8
-        try {
-            tps = std::stof(tps_s);
-            std = std::stof(std_s);
-        } catch (...) { return r; }
-    } else {
-        try { tps = std::stof(tps_col); } catch (...) { return r; }
-    }
-
-    r.test  = test_col;
-    r.tps   = tps;
-    r.std   = std;
-    r.valid = true;
-    return r;
-}
-
-bool BenchmarkPanel::is_bench_line(const std::string& line) {
-    return !line.empty() && line[0] == '|'
-        && line.find("llama") != std::string::npos;
-}
 
 // ---- BenchmarkPanel --------------------------------------------------------
 

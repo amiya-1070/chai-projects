@@ -9,14 +9,7 @@
 #include "config_panel.h"
 #include "storage.h"
 #include "telemetry.h"
-
-// Parsed result from one llama-bench output line
-struct BenchResult {
-    std::string test;       // "pp512" or "tg200" etc
-    float       tps  = 0.0f;
-    float       std  = 0.0f;
-    bool        valid = false;
-};
+#include "process_utils.h"
 
 // One complete benchmark run (pp + tg pair)
 struct BenchRun {
@@ -45,10 +38,7 @@ private:
     void stop_run();
     void bench_thread_func(BenchParams params);
 
-    // Output parsing
-    BenchResult parse_bench_line(const std::string& line);
-    bool        is_bench_line(const std::string& line);
-
+    
     // Sub-panel renderers
     void render_controls(const DashboardConfig& cfg);
     void render_live_output();

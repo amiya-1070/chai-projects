@@ -8,6 +8,7 @@
 #include "config_panel.h"
 #include "storage.h"
 #include "telemetry.h"
+#include "process_utils.h"
 #include "benchmark_panel.h"  // reuse BenchResult
 
 // One model to test in the size sweep
@@ -22,11 +23,12 @@ struct ModelSweepRun {
     ModelSpec   spec;
     BenchResult pp;
     BenchResult tg;
-    float       avg_temp_c  = 0.0f;
-    float       avg_power_w = 0.0f;
-    float       peak_rss_mb = 0.0f;
-    bool        oom         = false;   // couldn't load / crashed
-    bool        complete    = false;
+    float       avg_temp_c   = 0.0f;
+    float       avg_power_w  = 0.0f;
+    float       peak_rss_mb  = 0.0f;   // now system-wide peak used RAM
+    float       peak_swap_mb = 0.0f;   // NEW
+    bool        oom          = false;
+    bool        complete     = false;
 };
 
 class ModelSweepPanel {
