@@ -5,13 +5,13 @@
 # compile CXX with /usr/lib/ccache/c++
 C_DEFINES = 
 
-C_INCLUDES = -I"/media/amiyaun/New Volume/llama-gui/src" -I"/media/amiyaun/New Volume/llama-gui/third_party/imgui" -I"/media/amiyaun/New Volume/llama-gui/third_party/imgui/backends" -I"/media/amiyaun/New Volume/llama-gui/third_party/implot" -I"/media/amiyaun/New Volume/llama-gui/third_party"
+C_INCLUDES = -I"/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src" -I"/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/imgui" -I"/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/imgui/backends" -I"/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/implot" -I"/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party"
 
 C_FLAGS = -O3 -DNDEBUG -O2 -march=native -Wall -Wextra -Wno-unused-parameter
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I"/media/amiyaun/New Volume/llama-gui/src" -I"/media/amiyaun/New Volume/llama-gui/third_party/imgui" -I"/media/amiyaun/New Volume/llama-gui/third_party/imgui/backends" -I"/media/amiyaun/New Volume/llama-gui/third_party/implot" -I"/media/amiyaun/New Volume/llama-gui/third_party"
+CXX_INCLUDES = -I"/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src" -I"/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/imgui" -I"/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/imgui/backends" -I"/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/implot" -I"/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party"
 
 CXX_FLAGS = -O3 -DNDEBUG -O2 -march=native -Wall -Wextra -Wno-unused-parameter
 

@@ -1,8 +1,8 @@
 CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o: \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/backends/imgui_impl_glfw.cpp \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/backends/imgui_impl_glfw.cpp \
  /usr/include/stdc-predef.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imgui.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imconfig.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imconfig.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/float.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdarg.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stddef.h /usr/include/string.h \
@@ -20,7 +20,7 @@ CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o:
  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
  /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
  /usr/include/assert.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/backends/imgui_impl_glfw.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/backends/imgui_impl_glfw.h \
  /usr/include/GLFW/glfw3.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/types.h \

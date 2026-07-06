@@ -1,7 +1,7 @@
 CMakeFiles/llama_dashboard.dir/src/storage.cpp.o: \
- /media/amiyaun/New\ Volume/llama-gui/src/storage.cpp \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/storage.cpp \
  /usr/include/stdc-predef.h \
- /media/amiyaun/New\ Volume/llama-gui/src/storage.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/storage.h \
  /usr/include/c++/11/string \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/os_defines.h \
@@ -138,7 +138,7 @@ CMakeFiles/llama_dashboard.dir/src/storage.cpp.o: \
  /usr/include/c++/11/bits/stl_vector.h \
  /usr/include/c++/11/bits/stl_bvector.h \
  /usr/include/c++/11/bits/vector.tcc \
- /media/amiyaun/New\ Volume/llama-gui/third_party/sqlite3.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/sqlite3.h \
  /usr/include/c++/11/ctime /usr/include/c++/11/cstring \
  /usr/include/string.h /usr/include/strings.h \
  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \

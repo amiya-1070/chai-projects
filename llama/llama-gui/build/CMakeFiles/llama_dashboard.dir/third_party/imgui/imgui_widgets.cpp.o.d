@@ -1,8 +1,8 @@
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o: \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imgui_widgets.cpp \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui_widgets.cpp \
  /usr/include/stdc-predef.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imgui.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imconfig.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imconfig.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/float.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdarg.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stddef.h /usr/include/string.h \
@@ -20,7 +20,7 @@ CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
  /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
  /usr/include/assert.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imgui_internal.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui_internal.h \
  /usr/include/stdio.h /usr/include/x86_64-linux-gnu/bits/types.h \
  /usr/include/x86_64-linux-gnu/bits/typesizes.h \
  /usr/include/x86_64-linux-gnu/bits/time64.h \
@@ -204,4 +204,4 @@ CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o: \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imstb_textedit.h
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imstb_textedit.h

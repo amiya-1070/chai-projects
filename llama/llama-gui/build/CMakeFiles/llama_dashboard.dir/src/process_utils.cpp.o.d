@@ -1,7 +1,7 @@
 CMakeFiles/llama_dashboard.dir/src/process_utils.cpp.o: \
- /media/amiyaun/New\ Volume/llama-gui/src/process_utils.cpp \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/process_utils.cpp \
  /usr/include/stdc-predef.h \
- /media/amiyaun/New\ Volume/llama-gui/src/process_utils.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/process_utils.h \
  /usr/include/c++/11/string \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/os_defines.h \

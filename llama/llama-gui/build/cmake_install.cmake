@@ -1,4 +1,4 @@
-# Install script for directory: /media/amiyaun/New Volume/llama-gui
+# Install script for directory: /media/amiyaun/New Volume/chai-projects/llama/llama-gui
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/media/amiyaun/New Volume/llama-gui/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

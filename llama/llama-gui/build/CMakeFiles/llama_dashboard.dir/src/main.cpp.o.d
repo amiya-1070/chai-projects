@@ -1,8 +1,8 @@
 CMakeFiles/llama_dashboard.dir/src/main.cpp.o: \
- /media/amiyaun/New\ Volume/llama-gui/src/main.cpp \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/main.cpp \
  /usr/include/stdc-predef.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imgui.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imconfig.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imconfig.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/float.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdarg.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stddef.h /usr/include/string.h \
@@ -20,11 +20,11 @@ CMakeFiles/llama_dashboard.dir/src/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
  /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
  /usr/include/assert.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/backends/imgui_impl_glfw.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/backends/imgui_impl_opengl3.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/implot/implot.h \
- /media/amiyaun/New\ Volume/llama-gui/src/dashboard.h \
- /media/amiyaun/New\ Volume/llama-gui/src/config_panel.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/backends/imgui_impl_glfw.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/backends/imgui_impl_opengl3.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/implot/implot.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/dashboard.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/config_panel.h \
  /usr/include/c++/11/string \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/os_defines.h \
@@ -148,7 +148,7 @@ CMakeFiles/llama_dashboard.dir/src/main.cpp.o: \
  /usr/include/c++/11/bits/stl_vector.h \
  /usr/include/c++/11/bits/stl_bvector.h \
  /usr/include/c++/11/bits/vector.tcc \
- /media/amiyaun/New\ Volume/llama-gui/src/process_utils.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/process_utils.h \
  /usr/include/c++/11/functional /usr/include/c++/11/tuple \
  /usr/include/c++/11/utility /usr/include/c++/11/bits/stl_relops.h \
  /usr/include/c++/11/array /usr/include/c++/11/bits/uses_allocator.h \
@@ -180,12 +180,12 @@ CMakeFiles/llama_dashboard.dir/src/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/c++/11/bits/error_constants.h \
  /usr/include/c++/11/stdexcept /usr/include/c++/11/bits/std_mutex.h \
  /usr/include/c++/11/bits/unique_lock.h \
- /media/amiyaun/New\ Volume/llama-gui/src/benchmark_panel.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/benchmark_panel.h \
  /usr/include/c++/11/deque /usr/include/c++/11/bits/stl_deque.h \
  /usr/include/c++/11/bits/deque.tcc \
- /media/amiyaun/New\ Volume/llama-gui/src/storage.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/sqlite3.h \
- /media/amiyaun/New\ Volume/llama-gui/src/telemetry.h \
- /media/amiyaun/New\ Volume/llama-gui/src/inference_panel.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/storage.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/sqlite3.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/telemetry.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/inference_panel.h \
  /usr/include/GLFW/glfw3.h /usr/include/GL/gl.h /usr/include/GL/glext.h \
  /usr/include/KHR/khrplatform.h /usr/include/c++/11/cstring

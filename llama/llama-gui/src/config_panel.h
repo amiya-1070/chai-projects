@@ -36,6 +36,16 @@ struct DashboardConfig {
     // Derived helpers
     BenchParams  to_bench_params()  const;
     InferParams  to_infer_params()  const;
+
+    char base_gguf_path[512] = "";
+    char finetuned_gguf_path[512] = "";
+    char kl_helper_script[512]     = "";
+    char base_transformers_path[512] = "";
+    char finetuned_transformers_path[512] = "";
+
+    char finetuned_model_path[512] = "";   // kept for reference, not used for spawn
+    char base_model_hf_id[256]     = "meta-llama/Llama-3.2-1B-Instruct";
+    char finetuned_model_hf_id[256]= "coconutpdf/genomics-llama-1b";
 };
 
 class ConfigPanel {

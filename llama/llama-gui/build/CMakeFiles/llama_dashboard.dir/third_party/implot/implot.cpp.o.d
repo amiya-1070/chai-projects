@@ -1,9 +1,9 @@
 CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o: \
- /media/amiyaun/New\ Volume/llama-gui/third_party/implot/implot.cpp \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/implot/implot.cpp \
  /usr/include/stdc-predef.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/implot/implot.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imgui.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imconfig.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/implot/implot.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imconfig.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/float.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdarg.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stddef.h /usr/include/string.h \
@@ -21,7 +21,7 @@ CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
  /usr/include/x86_64-linux-gnu/bits/string_fortified.h \
  /usr/include/assert.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/implot/implot_internal.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/implot/implot_internal.h \
  /usr/include/time.h /usr/include/x86_64-linux-gnu/bits/time.h \
  /usr/include/x86_64-linux-gnu/bits/types.h \
  /usr/include/x86_64-linux-gnu/bits/typesizes.h \
@@ -37,7 +37,7 @@ CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/types/clockid_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/timer_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_itimerspec.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imgui_internal.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui_internal.h \
  /usr/include/stdio.h /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \

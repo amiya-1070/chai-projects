@@ -220,7 +220,7 @@ void Dashboard::render_telemetry_bar() {
 
 void Dashboard::render_main_tabs() {
     float menu_h  = ImGui::GetFrameHeight();
-    float bar_h   = 28.0f;
+    float bar_h   = 38.0f;
     float top_off = menu_h + bar_h;
     float disp_w  = ImGui::GetIO().DisplaySize.x;
     float disp_h  = ImGui::GetIO().DisplaySize.y;

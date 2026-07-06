@@ -1,7 +1,7 @@
 CMakeFiles/llama_dashboard.dir/src/telemetry.cpp.o: \
- /media/amiyaun/New\ Volume/llama-gui/src/telemetry.cpp \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/telemetry.cpp \
  /usr/include/stdc-predef.h \
- /media/amiyaun/New\ Volume/llama-gui/src/telemetry.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/telemetry.h \
  /usr/include/c++/11/vector /usr/include/c++/11/bits/stl_algobase.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/os_defines.h \

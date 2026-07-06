@@ -54,10 +54,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = "/media/amiyaun/New Volume/llama-gui"
+CMAKE_SOURCE_DIR = "/media/amiyaun/New Volume/chai-projects/llama/llama-gui"
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "/media/amiyaun/New Volume/llama-gui/build"
+CMAKE_BINARY_DIR = "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build"
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -81,14 +81,14 @@ clean: CMakeFiles/llama_dashboard.dir/clean
 CMakeFiles/llama_dashboard.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/llama_dashboard.dir/build.make CMakeFiles/llama_dashboard.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/llama_dashboard.dir/build.make CMakeFiles/llama_dashboard.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir="/media/amiyaun/New Volume/llama-gui/build/CMakeFiles" --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18 "Built target llama_dashboard"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18 "Built target llama_dashboard"
 .PHONY : CMakeFiles/llama_dashboard.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/llama_dashboard.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "/media/amiyaun/New Volume/llama-gui/build/CMakeFiles" 18
+	$(CMAKE_COMMAND) -E cmake_progress_start "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" 18
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/llama_dashboard.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start "/media/amiyaun/New Volume/llama-gui/build/CMakeFiles" 0
+	$(CMAKE_COMMAND) -E cmake_progress_start "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" 0
 .PHONY : CMakeFiles/llama_dashboard.dir/rule
 
 # Convenience name for target.

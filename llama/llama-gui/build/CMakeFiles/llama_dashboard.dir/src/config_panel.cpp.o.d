@@ -1,7 +1,7 @@
 CMakeFiles/llama_dashboard.dir/src/config_panel.cpp.o: \
- /media/amiyaun/New\ Volume/llama-gui/src/config_panel.cpp \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/config_panel.cpp \
  /usr/include/stdc-predef.h \
- /media/amiyaun/New\ Volume/llama-gui/src/config_panel.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/config_panel.h \
  /usr/include/c++/11/string \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/os_defines.h \
@@ -138,7 +138,7 @@ CMakeFiles/llama_dashboard.dir/src/config_panel.cpp.o: \
  /usr/include/c++/11/bits/stl_vector.h \
  /usr/include/c++/11/bits/stl_bvector.h \
  /usr/include/c++/11/bits/vector.tcc \
- /media/amiyaun/New\ Volume/llama-gui/src/process_utils.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/process_utils.h \
  /usr/include/c++/11/functional /usr/include/c++/11/tuple \
  /usr/include/c++/11/utility /usr/include/c++/11/bits/stl_relops.h \
  /usr/include/c++/11/array /usr/include/c++/11/bits/uses_allocator.h \
@@ -170,8 +170,8 @@ CMakeFiles/llama_dashboard.dir/src/config_panel.cpp.o: \
  /usr/include/x86_64-linux-gnu/c++/11/bits/error_constants.h \
  /usr/include/c++/11/stdexcept /usr/include/c++/11/bits/std_mutex.h \
  /usr/include/c++/11/bits/unique_lock.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imgui.h \
- /media/amiyaun/New\ Volume/llama-gui/third_party/imgui/imconfig.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imconfig.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/float.h /usr/include/string.h \
  /usr/include/strings.h \
  /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \

@@ -14,7 +14,7 @@ namespace fs = std::filesystem;
 
 BenchParams DashboardConfig::to_bench_params() const {
     BenchParams p;
-    p.model_path  = model_path;
+    p.model_path  = base_gguf_path;
     p.llama_bench = llama_bench;
     p.n_threads   = n_threads;
     p.n_prompt    = n_prompt;
@@ -30,7 +30,8 @@ BenchParams DashboardConfig::to_bench_params() const {
 
 InferParams DashboardConfig::to_infer_params() const {
     InferParams p;
-    p.model_path  = model_path;
+    
+    p.model_path = base_gguf_path;
     p.llama_cli   = llama_cli;
     p.n_threads   = n_threads;
     p.n_predict   = n_predict;
@@ -83,8 +84,8 @@ void ConfigPanel::detect_defaults() {
 
     // Try to find llama-bench and llama-cli relative to common build paths
     std::vector<std::string> search = {
-        "/media/amiyaun/New Volume/llama.cpp/build/bin/llama-bench",
-        "/media/amiyaun/New Volume/llama.cpp/build/bin/llama-cli",
+        "/media/amiyaun/New Volume/chai-projects/llama/llama.cpp/build/bin/llama-bench",
+        "/media/amiyaun/New Volume/chai-projects/llama/llama.cpp/build/bin/llama-cli",
         "./build/bin/llama-bench",
         "./build/bin/llama-cli",
     };
@@ -105,17 +106,43 @@ void ConfigPanel::detect_defaults() {
     // Default DB path
     if (m_cfg.db_path[0] == '\0')
         std::strncpy(m_cfg.db_path,
-                     "/media/amiyaun/New Volume/llm-benchmark/bench_history.db",
+                     "/media/amiyaun/New Volume/chai-projects/llama/llm-benchmark/bench_history.db",
                      sizeof(m_cfg.db_path) - 1);
 
     // Default model
-    if (m_cfg.model_path[0] == '\0') {
+    if (m_cfg.base_gguf_path[0] == '\0') {
         std::string mp =
-            "/media/amiyaun/New Volume/llm-benchmark/"
+            "/media/amiyaun/New Volume/chai-projects/llama/llm-benchmark/"
             "Llama-3.2-1B-Instruct-f16.gguf";
         if (fs::exists(mp))
-            std::strncpy(m_cfg.model_path, mp.c_str(),
-                         sizeof(m_cfg.model_path) - 1);
+            std::strncpy(m_cfg.base_gguf_path, mp.c_str(),sizeof(m_cfg.base_gguf_path) - 1);
+    }
+
+        // KL helper script
+    if (m_cfg.kl_helper_script[0] == '\0') {
+        std::string p =
+            "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/kl_helper.py";
+        if (fs::exists(p))
+            std::strncpy(m_cfg.kl_helper_script, p.c_str(),
+                        sizeof(m_cfg.kl_helper_script) - 1);
+    }
+
+    // Base HF checkpoint directory
+    if (m_cfg.base_transformers_path[0] == '\0') {
+        std::string p =
+            "/media/amiyaun/New Volume/chai-projects/llama/models/llama-3.2-1B-Instruct";
+        if (fs::exists(p))
+            std::strncpy(m_cfg.base_transformers_path, p.c_str(),
+                        sizeof(m_cfg.base_transformers_path) - 1);
+    }
+
+    // Finetuned checkpoint directory
+    if (m_cfg.finetuned_transformers_path[0] == '\0') {
+        std::string p =
+            "/media/amiyaun/New Volume/chai-projects/llama/models/genomics-llama-1b";
+        if (fs::exists(p))
+            std::strncpy(m_cfg.finetuned_transformers_path, p.c_str(),
+                        sizeof(m_cfg.finetuned_transformers_path) - 1);
     }
 }
 
@@ -142,20 +169,38 @@ void ConfigPanel::render_paths() {
             ImGui::SetTooltip("Enter full path");
     };
 
-    path_input("Model (.gguf)##model",
-               m_cfg.model_path, sizeof(m_cfg.model_path));
+    path_input("Base model (.gguf)##basegguf",
+           m_cfg.base_gguf_path, sizeof(m_cfg.base_gguf_path));
+
+    path_input("Finetuned model (.gguf)##ftgguf",
+            m_cfg.finetuned_gguf_path, sizeof(m_cfg.finetuned_gguf_path));
+
     path_input("llama-bench##bench",
-               m_cfg.llama_bench, sizeof(m_cfg.llama_bench));
+            m_cfg.llama_bench, sizeof(m_cfg.llama_bench));
+
     path_input("llama-cli##cli",
-               m_cfg.llama_cli,   sizeof(m_cfg.llama_cli));
+            m_cfg.llama_cli, sizeof(m_cfg.llama_cli));
+
     path_input("Database (.db)##db",
-               m_cfg.db_path,     sizeof(m_cfg.db_path));
+            m_cfg.db_path, sizeof(m_cfg.db_path));
+
+
+    path_input("KL helper script##klscript",
+           m_cfg.kl_helper_script,
+           sizeof(m_cfg.kl_helper_script));
+    path_input("Base model HF ID##basehf",
+            m_cfg.base_model_hf_id,
+            sizeof(m_cfg.base_model_hf_id));
+    path_input("Finetuned model HF ID##fthf",
+            m_cfg.finetuned_model_hf_id,
+            sizeof(m_cfg.finetuned_model_hf_id));
+    
 
     // SHA256 verify button
     ImGui::SameLine();
     if (ImGui::SmallButton("Verify SHA256")) {
         std::string cmd = std::string("sha256sum \"")
-                        + m_cfg.model_path + "\"";
+                        + m_cfg.base_gguf_path + "\"";
         std::string result = run_command(cmd);
         // result stored in a static buffer for display
         static char sha_result[256] = "";

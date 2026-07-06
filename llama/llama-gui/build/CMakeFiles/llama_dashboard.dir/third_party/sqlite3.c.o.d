@@ -1,5 +1,5 @@
 CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o: \
- /media/amiyaun/New\ Volume/llama-gui/third_party/sqlite3.c \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/sqlite3.c \
  /usr/include/stdc-predef.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdarg.h /usr/include/stdio.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
