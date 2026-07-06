@@ -36,6 +36,7 @@ int main(int, char**) {
     // ImGui init
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext(); 
     ImGuiIO& io = ImGui::GetIO();
     ImGuiStyle& style = ImGui::GetStyle();
     
@@ -57,7 +58,8 @@ int main(int, char**) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     // Dark theme with slight customization
-    ImGui::StyleColorsDark();
+    
+    ImGui::StyleColorsClassic();
     
     style.WindowRounding    = 4.0f;
     style.FrameRounding     = 3.0f;
@@ -69,20 +71,20 @@ int main(int, char**) {
     style.ItemSpacing       = {8.0f, 5.0f};
 
     // Accent colors: slightly blue-tinted
-    style.Colors[ImGuiCol_TitleBgActive]  = {0.12f, 0.22f, 0.35f, 1.0f};
-    style.Colors[ImGuiCol_Tab]            = {0.10f, 0.18f, 0.28f, 1.0f};
-    style.Colors[ImGuiCol_TabActive]      = {0.18f, 0.35f, 0.55f, 1.0f};
-    style.Colors[ImGuiCol_TabHovered]     = {0.22f, 0.42f, 0.65f, 1.0f};
-    style.Colors[ImGuiCol_Header]         = {0.15f, 0.28f, 0.45f, 1.0f};
-    style.Colors[ImGuiCol_HeaderHovered]  = {0.20f, 0.38f, 0.58f, 1.0f};
-    style.Colors[ImGuiCol_HeaderActive]   = {0.25f, 0.45f, 0.68f, 1.0f};
-    style.Colors[ImGuiCol_Button]         = {0.15f, 0.28f, 0.45f, 1.0f};
-    style.Colors[ImGuiCol_ButtonHovered]  = {0.22f, 0.42f, 0.65f, 1.0f};
-    style.Colors[ImGuiCol_ButtonActive]   = {0.28f, 0.52f, 0.78f, 1.0f};
-    style.Colors[ImGuiCol_FrameBg]        = {0.10f, 0.10f, 0.14f, 1.0f};
-    style.Colors[ImGuiCol_FrameBgHovered] = {0.14f, 0.20f, 0.30f, 1.0f};
-    style.Colors[ImGuiCol_CheckMark]      = {0.30f, 0.80f, 0.40f, 1.0f};
-    style.Colors[ImGuiCol_SliderGrab]     = {0.25f, 0.55f, 0.80f, 1.0f};
+    // style.Colors[ImGuiCol_TitleBgActive]  = {0.12f, 0.22f, 0.35f, 1.0f};
+    // style.Colors[ImGuiCol_Tab]            = {0.10f, 0.18f, 0.28f, 1.0f};
+    // style.Colors[ImGuiCol_TabActive]      = {0.18f, 0.35f, 0.55f, 1.0f};
+    // style.Colors[ImGuiCol_TabHovered]     = {0.22f, 0.42f, 0.65f, 1.0f};
+    // style.Colors[ImGuiCol_Header]         = {0.15f, 0.28f, 0.45f, 1.0f};
+    // style.Colors[ImGuiCol_HeaderHovered]  = {0.20f, 0.38f, 0.58f, 1.0f};
+    // style.Colors[ImGuiCol_HeaderActive]   = {0.25f, 0.45f, 0.68f, 1.0f};
+    // style.Colors[ImGuiCol_Button]         = {0.15f, 0.28f, 0.45f, 1.0f};
+    // style.Colors[ImGuiCol_ButtonHovered]  = {0.22f, 0.42f, 0.65f, 1.0f};
+    // style.Colors[ImGuiCol_ButtonActive]   = {0.28f, 0.52f, 0.78f, 1.0f};
+    // style.Colors[ImGuiCol_FrameBg]        = {0.10f, 0.10f, 0.14f, 1.0f};
+    // style.Colors[ImGuiCol_FrameBgHovered] = {0.14f, 0.20f, 0.30f, 1.0f};
+    // style.Colors[ImGuiCol_CheckMark]      = {0.30f, 0.80f, 0.40f, 1.0f};
+    // style.Colors[ImGuiCol_SliderGrab]     = {0.25f, 0.55f, 0.80f, 1.0f};
 
     // Load default font slightly larger
     io.Fonts->AddFontDefault();

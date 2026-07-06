@@ -159,7 +159,7 @@ void ConfigPanel::render() {
 }
 
 void ConfigPanel::render_paths() {
-    ImGui::TextColored({0.4f, 0.9f, 0.4f, 1.0f}, "Paths");
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Paths");
 
     auto path_input = [&](const char* label, char* buf, size_t bufsz) {
         if (ImGui::InputText(label, buf, bufsz))
@@ -215,7 +215,7 @@ void ConfigPanel::render_paths() {
 }
 
 void ConfigPanel::render_threading() {
-    ImGui::TextColored({0.4f, 0.9f, 0.4f, 1.0f}, "Threading");
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Threading");
 
     // CPU topology table
     if (ImGui::TreeNode("CPU Topology")) {
@@ -234,9 +234,9 @@ void ConfigPanel::render_threading() {
                 ImGui::Text("%.0f", c.max_freq_mhz);
                 ImGui::TableSetColumnIndex(2);
                 if (c.is_p_core)
-                    ImGui::TextColored({0.3f,0.8f,0.3f,1.0f}, "P-core");
+                    ImGui::TextColored({0.82f,0.68f,1.0f,1.0f}, "P-core");
                 else
-                    ImGui::TextColored({0.8f,0.6f,0.2f,1.0f}, "E-core");
+                    ImGui::TextColored({0.90f,0.84f,0.2f,1.0f}, "E-core");
             }
             ImGui::EndTable();
         }
@@ -289,7 +289,7 @@ void ConfigPanel::render_threading() {
 }
 
 void ConfigPanel::render_flags() {
-    ImGui::TextColored({0.4f, 0.9f, 0.4f, 1.0f}, "Runtime Flags");
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Runtime Flags");
 
     if (ImGui::Checkbox("Flash Attention (-fa on)", &m_cfg.flash_attn))
         m_changed = true;
@@ -305,7 +305,7 @@ void ConfigPanel::render_flags() {
 }
 
 void ConfigPanel::render_bench_params() {
-    ImGui::TextColored({0.4f, 0.9f, 0.4f, 1.0f}, "Benchmark Parameters");
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Benchmark Parameters");
 
     if (ImGui::InputInt("Prompt tokens (-p)", &m_cfg.n_prompt))
         m_changed = true;
@@ -317,7 +317,8 @@ void ConfigPanel::render_bench_params() {
         m_changed = true;
 
     ImGui::Separator();
-    ImGui::TextColored({0.4f, 0.9f, 0.4f, 1.0f}, "Inference Parameters");
+    
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Inference Parameters");
     if (ImGui::InputInt("Max tokens (n_predict)", &m_cfg.n_predict))
         m_changed = true;
 

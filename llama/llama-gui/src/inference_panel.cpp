@@ -469,7 +469,9 @@ void InferencePanel::render_controls(const DashboardConfig& cfg) {
     bool any_generating =
         m_base_generating || m_kl_generating || m_kl_computing;
 
-    ImGui::TextColored({0.4f,0.9f,0.4f,1.0f}, "Dual Inference");
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Dual Inference");
+
+    
     ImGui::SameLine(0, 20);
 
     if (m_base_generating)
@@ -567,7 +569,7 @@ void InferencePanel::render_chat_columns(const DashboardConfig& cfg) {
                 ImGui::TextUnformatted("▌");
         }
         if (m_kl_computing) {
-            ImGui::TextColored({0.5f,0.8f,1.0f,1.0f},
+            ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f},
                                "Computing KL divergence...");
         }
         if (m_scroll_ft) {
@@ -658,7 +660,7 @@ void InferencePanel::render_input_bar(const DashboardConfig& cfg) {
 
 void InferencePanel::render_kl_panel() {
     
-    ImGui::TextColored({0.4f,0.9f,0.4f,1.0f},"Forward and Reverse KL Divergence");
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f},"Forward and Reverse KL Divergence");
 
     std::lock_guard<std::mutex> lk(m_mutex);
 
@@ -765,7 +767,7 @@ void InferencePanel::render_kl_panel() {
 }
 
 void InferencePanel::render_telemetry_strip() {
-    ImGui::TextColored({0.4f,0.9f,0.4f,1.0f}, "Inference Telemetry");
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Inference Telemetry");
 
     std::lock_guard<std::mutex> lk(m_mutex);
     if (m_infer_times.empty()) {

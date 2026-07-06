@@ -306,8 +306,8 @@ void Dashboard::render_telemetry_window() {
 
     int n = (int)ts.size();
     float* t = ts.data();
-
-    ImGui::TextColored({0.4f,0.9f,0.4f,1.0f},
+    
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f},
                        "System Telemetry (last %.0f s)",
                        ts.back() - ts.front());
 
@@ -316,6 +316,7 @@ void Dashboard::render_telemetry_window() {
                           const char* ylabel,
                           ImVec4 color,
                           float ymin, float ymax) {
+        if ((int)ys.size() != n) return; // guard against size mismatch
         ImPlot::PushStyleColor(ImPlotCol_PlotBg, {0.08f, 0.08f, 0.10f, 1.0f});
         if (ImPlot::BeginPlot(title, ImVec2(-1, 140),
                               ImPlotFlags_NoLegend |
@@ -345,7 +346,8 @@ void Dashboard::render_telemetry_window() {
 
     // Per-CPU frequency heatmap
     ImGui::Separator();
-    ImGui::TextColored({0.4f,0.9f,0.4f,1.0f}, "Per-CPU Frequency");
+    
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Per-CPU Frequency");
 
     auto snap = m_telemetry.latest();
     for (int i = 0; i < (int)snap.cpu_freq_mhz.size(); i++) {

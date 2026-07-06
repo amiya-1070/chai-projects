@@ -192,7 +192,8 @@ void ModelSweepPanel::render(const DashboardConfig& cfg) {
 
             std::lock_guard<std::mutex> lk(m_mutex);
             if (!m_log.empty()) {
-                ImGui::TextColored({0.4f,0.9f,0.4f,1.0f}, "Live Output");
+                
+                ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Live Output");
                 ImGui::BeginChild("sweep_log", ImVec2(0, 150), true);
                 for (auto& line : m_log) ImGui::TextUnformatted(line.c_str());
                 if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
@@ -214,7 +215,8 @@ void ModelSweepPanel::render(const DashboardConfig& cfg) {
 }
 
 void ModelSweepPanel::render_controls(const DashboardConfig& cfg) {
-    ImGui::TextColored({0.4f,0.9f,0.4f,1.0f}, "Model Size Scaling Sweep");
+    
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Model Size Scaling Sweep");
     ImGui::TextWrapped(
         "Runs llama-bench sequentially across the configured model ladder. "
         "Uses the current thread/KV/flash-attn settings from Configuration.");

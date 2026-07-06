@@ -204,7 +204,7 @@ void BenchmarkPanel::render(const DashboardConfig& cfg) {
 }
 
 void BenchmarkPanel::render_controls(const DashboardConfig& cfg) {
-    ImGui::TextColored({0.4f, 0.9f, 0.4f, 1.0f}, "Benchmark Controls");
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "Benchmark Controls");
 
     if (m_running) {
         ImGui::BeginDisabled();
