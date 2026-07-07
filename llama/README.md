@@ -41,9 +41,9 @@ Q4_K_M is a good default quantization — a reasonable balance of file
 size, speed, and output quality.
 
 
-=====================================================================
+
 SECTION 1: RUNNING ON LINUX (native)
-=====================================================================
+
 
 1. Install dependencies
 ------------------------
