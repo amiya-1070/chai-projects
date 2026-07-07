@@ -107,7 +107,38 @@ OMP_PROC_BIND=close OMP_PLACES=cores OMP_NUM_THREADS=8 ./sobel_dashboard /path/t
 
 ### Notes for hybrid CPU users (Intel Alder Lake, Raptor Lake, etc.)
 
-The dashboard automatically detects your P-core and E-core counts by reading per-core maximum frequencies from sysfs and computes a weighted row partition ratio so P-cores receive proportionally more work. This is displayed in the Build Info panel. No manual configuration is needed.
+The dashboard automatically detects your P-core and E-core counts by reading per-core maximum frequencies from sysfs and computes a weighted row partition ratio so P-cores receive proportionally more work. This is displayed in the Build Info panel. 
+
+If you already know your CPU's P-core to E-core performance ratio from your own
+benchmarking (for example, you measured that P-cores are 1.6x faster than E-cores
+on your specific workload), you can hardcode this instead of relying on the
+automatic detection.
+
+In sobel_min.c, find the lines near the top of sobel_avx2_omp that read:
+
+    int e_w = 100;
+    int p_w = (int)(e_w * pe_ratio + 0.5);
+
+Replace them with your measured ratio directly, for example for a 1.6 ratio:
+
+    int e_w = 100;
+    int p_w = 160;
+
+Then remove the pe_ratio parameter from the function signature in both
+sobel_min.c and sobel_min.h, and remove the argument from every call site
+in main_dashboard.cpp.
+
+To find your ratio experimentally, run the dashboard with 1 thread and note
+the mean latency, then manually pin execution to only P-cores using:
+
+    taskset -c 0,1,2,3 ./sobel_dashboard /path/to/image.png
+
+and then to only E-cores:
+
+    taskset -c 4,5,6,7,8,9,10,11 ./sobel_dashboard /path/to/image.png
+
+Divide the E-core latency by the P-core latency to get the ratio. Use that
+value for p_w with e_w fixed at 100, rounding to the nearest integer.
 
 ---
 
@@ -238,6 +269,33 @@ sobel_dashboard.exe C:\path\to\image.png
 ### Notes for hybrid CPU users on Windows
 
 The P-core and E-core detection on Windows falls back to uniform partitioning since per-core frequency sysfs files are not available. The dashboard will still run correctly but will not apply weighted row partitioning. All other panels function identically to the Linux version.
+
+If you already know your CPU's P-core to E-core performance ratio from your own
+benchmarking (for example, you measured that P-cores are 1.6x faster than E-cores
+on your specific workload), you can hardcode this instead of relying on the
+automatic detection.
+
+Open Command Prompt and use the /affinity flag with a hex bitmask.
+Each bit in the mask corresponds to a logical CPU, with bit 0 being CPU 0.
+For example if your P-cores are CPUs 0-3 and E-cores are CPUs 4-11:
+
+    P-cores only (CPUs 0-3, bitmask 00001111 in binary = 0xF):
+    start /affinity 0xF sobel_dashboard.exe C:\path\to\image.png
+
+    E-cores only (CPUs 4-11, bitmask 111111110000 in binary = 0xFF0):
+    start /affinity 0xFF0 sobel_dashboard.exe C:\path\to\image.png
+
+To find which CPUs are your P-cores and which are E-cores on Windows, open
+Task Manager, go to Performance, click CPU, then right-click the graph and
+select Change graph to, then Logical processors. P-cores will show higher
+maximum frequencies. Alternatively run this in PowerShell:
+
+    Get-WmiObject Win32_Processor | Select-Object Name, MaxClockSpeed, NumberOfCores, NumberOfLogicalProcessors
+
+The core numbering in Windows does not always match Linux, so verify your
+CPU topology using the Coreinfo tool from Microsoft Sysinternals:
+
+    https://learn.microsoft.com/en-us/sysinternals/downloads/coreinfo
 
 ---
 
