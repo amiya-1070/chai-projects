@@ -43,8 +43,8 @@ sudo apt install dmidecode
 ### Clone the repository
 
 ```
-git clone https://github.com/yourname/sobel-gui.git
-cd sobel-gui
+git clone https://github.com/amiya-1070/chai-projects.git
+cd chai-projects/sobel-gui
 ```
 
 ### Dear ImGui (docking branch) and ImPlot
