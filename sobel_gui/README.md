@@ -47,16 +47,18 @@ git clone https://github.com/yourname/sobel-gui.git
 cd sobel-gui
 ```
 
-### Clone Dear ImGui (docking branch) and ImPlot
+### Dear ImGui (docking branch) and ImPlot
 
-These are not included in the repository and must be cloned manually into the project directory:
+These are **already included** in the repository (or you can clone them manually into the project directory):
 
 ```
 git clone https://github.com/ocornut/imgui.git -b docking imgui
 git clone https://github.com/epezent/implot.git implot
 ```
 
-### Download stb headers
+### stb headers
+
+These are **already included** in the repository (or you can curl them manually into the project directory):
 
 ```
 curl -O https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
@@ -142,11 +144,13 @@ vcpkg install opencv4:x64-windows
 ### Clone the repository
 
 ```
-git clone https://github.com/yourname/sobel-gui.git
-cd sobel-gui
+git clone https://github.com/amiya-1070/chai-projects.git
+cd chai-projects/sobel-gui
 ```
 
 ### Clone Dear ImGui (docking branch) and ImPlot
+
+These are **already included** in the repository (or you can clone them manually into the project directory):
 
 ```
 git clone https://github.com/ocornut/imgui.git -b docking imgui
@@ -155,7 +159,8 @@ git clone https://github.com/epezent/implot.git implot
 
 ### Download stb headers
 
-Download these two files and place them in the sobel-gui directory:
+These are **already included** in the repository (or you can download them manually into the project directory):
+
 
 ```
 https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
