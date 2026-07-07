@@ -129,9 +129,10 @@ easiest path is running it inside WSL2 (Windows Subsystem for Linux),
 using WSLg for GUI display — no separate X server setup required on
 a reasonably modern Windows install.
 
-NOTE ON TELEMETRY: the Telemetry tab and per-run temperature/power
-readings rely on Linux hardware sensor files (/sys/class/hwmon,
-/sys/devices/.../cpufreq) that are not meaningfully accessible inside
+NOTE ON TELEMETRY: 
+the Telemetry tab and per-run temperature/power
+readings rely on Linux hardware sensor files (`/sys/class/hwmon`,
+`/sys/devices/.../cpufreq`) that are not meaningfully accessible inside
 a WSL2 virtual machine. Expect these values to show as 0 or
 placeholder data under WSL2 — this is expected and does not affect
 actual model inference or benchmark throughput numbers.
@@ -196,7 +197,38 @@ produce output, this is a known limitation of running perf inside a
 VM rather than a project bug.)
 
 
-4. Build llama.cpp (inside WSL)
+4. Important: Hardcoded Linux tools (taskset, perf)
+------------------------------------------------------
+This project shells out to two Linux command-line tools directly:
+ 
+  - `taskset` — used for CPU core affinity (Configuration panel's
+    "CPU mask" field). This is part of Ubuntu's standard util-linux
+    package, so it IS available inside WSL2 without extra install.
+    However, WSL2 virtualizes the CPU topology, so core numbers may
+    not correspond to the same physical P-core/E-core layout you'd
+    see on bare-metal Linux. Any thread-affinity tuning done on native
+    Linux may not carry the same meaning here.
+ 
+  - `perf stat` (used by the Perf Stat tab) — requires direct access
+    to hardware performance counters. This is NOT reliably available
+    inside WSL2; it depends on whether your specific WSL2 kernel
+    build exposes PMU passthrough from the Windows host, which is
+    inconsistent across systems. If the Perf Stat tab produces empty
+    output or errors on Windows/WSL2, this is a virtualization
+    limitation, not a bug in the dashboard — the Sweep tab (model
+    ladder, throughput table, plots) will still work normally
+    regardless, since that only depends on llama-bench itself.
+ 
+Neither of these tools exists on native Windows outside of WSL2 at
+all — there is no direct Windows equivalent wired into this project.
+If you need real CPU-affinity control or perf-counter data on
+Windows, that would require separate, unimplemented platform-specific
+code (e.g. Windows' SetThreadAffinityMask for affinity, and Windows
+Performance Counters or ETW for perf-equivalent data) — not something
+this project currently supports.
+
+
+5. Build llama.cpp (inside WSL)
 -----------------------------------
     git clone https://github.com/ggml-org/llama.cpp
     cd llama.cpp
