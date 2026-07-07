@@ -1,4 +1,10 @@
-LLAMA DASHBOARD — SETUP AND USAGE
+## Table of Contents
+
+- [Llama Dashboard](#llama-dashboard)
+- [Linux](#linux)
+- [Windows](#windows)
+
+LLAMA DASHBOARD
 ===================================
 
 WHAT THIS IS
@@ -42,7 +48,7 @@ size, speed, and output quality.
 
 
 
-SECTION 1: RUNNING ON LINUX (native)
+LINUX
 ====================================
 
 1. Install dependencies
@@ -115,7 +121,7 @@ For a permanent change, add `kernel.perf_event_paranoid = -1` to
 `/etc/sysctl.conf` and run `sudo sysctl -p`.
 
 
-SECTION 2: RUNNING ON WINDOWS (via WSL2)
+WINDOWS
 =====================================================================
 
 This project is developed and tested on native Linux. On Windows, the
