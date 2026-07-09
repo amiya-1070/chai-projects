@@ -30,22 +30,88 @@ REQUIREMENTS (both platforms)
 - ~10-20 GB free disk space depending on how many model sizes you want
   to test (a 14B model at Q4_K_M quantization alone is ~9 GB)
 
+  
+GETTING THE MODELS: LLAMA 3.2 1B INSTRUCT AND THE FINETUNED GENOMICS MODEL
+----------------------------------------------------------------------------
+This project uses each model in TWO different ways:
 
-GETTING MODELS
----------------
-Model files must be in GGUF format (a llama.cpp-native format, not raw
-HuggingFace safetensors/bin). Pre-quantized GGUFs are available on
-HuggingFace, commonly under repos maintained by "bartowski" or similar.
+  1. GGUF format — for llama-bench (Benchmark and Model Size Sweep tabs)
+  2. HuggingFace format — used by kl_helper.py (invoked from the
+     Configuration panel) to compute KL divergence between the base
+     and finetuned model's output distributions
 
-Example (requires `huggingface_hub` — `pip install huggingface_hub`):
+These require separate setup steps.
 
-    huggingface-cli download bartowski/Qwen2.5-7B-Instruct-GGUF \
-        Qwen2.5-7B-Instruct-Q4_K_M.gguf --local-dir ./models
+--- Part A: GGUF setup (for benchmarking) ---
 
-Repeat for whichever model sizes you want in your sweep ladder.
-Q4_K_M is a good default quantization — a reasonable balance of file
-size, speed, and output quality.
+1. Download the HuggingFace model folders
 
+   Requires `huggingface_hub` (pip install huggingface_hub).
+
+   Base model — Llama-3.2-1B-Instruct:
+       huggingface-cli download meta-llama/Llama-3.2-1B-Instruct \
+           --local-dir ./models/llama-3.2-1B-Instruct
+
+   (Note: Meta's Llama models are gated on HuggingFace — request
+   access on the model page and log in via `huggingface-cli login`
+   with an approved account before this will work.)
+
+   Finetuned genomics model:
+       huggingface-cli download coconutpdf/genomics-llama-1b \
+           --local-dir ./models/genomics-llama-1b
+
+2. Convert each to GGUF
+
+   From inside your llama.cpp directory:
+
+       pip install -r requirements.txt
+
+       python convert_hf_to_gguf.py ../models/llama-3.2-1B-Instruct \
+           --outfile ../models/llama-3.2-1b-instruct-f16.gguf \
+           --outtype f16
+
+       python convert_hf_to_gguf.py ../models/genomics-llama-1b \
+           --outfile ../models/genomics-llama-1b-f16.gguf \
+           --outtype f16
+
+   Optionally quantize the result (e.g. to Q4_K_M) using llama.cpp's
+   quantize tool — see the "Getting models" section above.
+
+3. In the dashboard's Configuration panel ("Paths" section), set:
+
+     - "Base model (.gguf)"      -> the converted base .gguf file
+     - "Finetuned model (.gguf)" -> the converted finetuned .gguf file
+
+--- Part B: HuggingFace-format setup (for KL divergence analysis) ---
+
+kl_helper.py loads both models directly via HuggingFace Transformers,
+NOT via the GGUF files — this is a separate, independent code path
+used for the KL divergence feature specifically.
+
+You do NOT need to manually download anything for this part. In the
+Configuration panel, set:
+
+     - "Base model HF ID"      -> meta-llama/Llama-3.2-1B-Instruct
+     - "Finetuned model HF ID" -> coconutpdf/genomics-llama-1b
+     - "KL helper script"      -> full path to kl_helper.py
+
+The first time the KL feature is used, kl_helper.py will
+automatically download both models from HuggingFace Hub via
+`from_pretrained()` and cache them locally (default HF cache
+location: ~/.cache/huggingface). This requires:
+
+     pip install torch transformers
+
+installed in whatever Python environment kl_helper.py runs under.
+As with the GGUF download, meta-llama/Llama-3.2-1B-Instruct is
+gated — the machine running kl_helper.py needs to be logged in via
+`huggingface-cli login` with an approved account, or the automatic
+download will fail with a 403/permission error.
+
+NOTE: kl_helper.py loads both models in full (float16) directly into
+CPU memory for inference — expect several GB of RAM usage per model
+while the KL feature is active, in addition to whatever the
+Benchmark/Sweep tabs are separately using via llama-bench.
 
 
 LINUX
