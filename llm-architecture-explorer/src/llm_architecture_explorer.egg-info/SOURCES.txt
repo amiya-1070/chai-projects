@@ -1,0 +1,13 @@
+pyproject.toml
+src/llm_architecture_explorer.egg-info/PKG-INFO
+src/llm_architecture_explorer.egg-info/SOURCES.txt
+src/llm_architecture_explorer.egg-info/dependency_links.txt
+src/llm_architecture_explorer.egg-info/requires.txt
+src/llm_architecture_explorer.egg-info/top_level.txt
+src/llm_explorer/__init__.py
+src/llm_explorer/core/__init__.py
+src/llm_explorer/core/layer_node.py
+src/llm_explorer/core/model_loader.py
+src/llm_explorer/core/tree_builder.py
+src/llm_explorer/ui/__init__.py
+tests/test_tree_builder.py
