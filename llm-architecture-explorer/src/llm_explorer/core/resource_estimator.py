@@ -123,10 +123,12 @@ def estimate(tree: LayerNode, selection: SelectionState) -> ResourceEstimate:
     trainable_memory = 0
     pruned_count = 0
     peft_count = 0
+    warnings: list[str] = []
 
     def walk(node: LayerNode, repeat_multiplier: int = 1):
         nonlocal total_params, active_params, trainable_params
         nonlocal frozen_memory, trainable_memory, pruned_count, peft_count
+        nonlocal warnings
 
         mult = repeat_multiplier * (node.repeat_count or 1)
 

@@ -6,20 +6,29 @@ from llm_explorer.core.tree_builder import build_tree, collapse_repeats, model_t
 from llm_explorer.core.layer_node import LayerNode
 from llm_explorer.core.selection_state import SelectionState, NodeMode, PeftConfig, PEFT_METHODS
 from llm_explorer.core.resource_estimator import estimate
+from llm_explorer.codegen.notebook_builder import build_notebook, save_notebook
+
 
 
 def _is_linear_like(node: LayerNode) -> bool:
     weight_shape = node.shape_info.get("weight")
-    return weight_shape is not None and len(weight_shape) == 2
-
+    return (
+        node.module_type == "Linear"
+        and weight_shape is not None
+        and len(weight_shape) == 2
+    )
 
 class ExplorerApp:
     def __init__(self):
         self.tree: LayerNode | None = None
+        self.model = None  # NEW: keep the loaded model around so we can rebuild the tree on toggle
         self.selected_node: LayerNode | None = None
         self.selection = SelectionState()
         self._tag_to_node: dict[str, LayerNode] = {}
+        self._node_to_tag: dict[str, str] = {}
         self._tag_counter = 0
+        self.collapse_layers = True  # NEW: current tree view mode
+        self.global_peft_config = PeftConfig()  # NEW: single shared LoRA config for all targets
 
     def _next_tag(self) -> str:
         self._tag_counter += 1
@@ -36,27 +45,34 @@ class ExplorerApp:
         except ModelLoadError as e:
             dpg.set_value("status_text", f"Error: {e}")
             return
-
-        tree = build_tree(model, root_name="model")
-        tree = collapse_repeats(tree, min_repeat=3)
-        self.tree = tree
-        self.selection = SelectionState()  # fresh selection state per model load
+        
+        self.model = model
+        self.selection = SelectionState()
         self.selected_node = None
+        self.global_peft_config = PeftConfig()  # NEW: reset to defaults on fresh model load
+        self._tag_to_node.clear()
+        self._node_to_tag.clear()
+        self._tag_counter = 0
+
+        if dpg.does_item_exist("summary_results_container"):
+            dpg.delete_item("summary_container", children_only=True)  # force full rebuild of PEFT controls too
 
         arch = getattr(config, "architectures", ["unknown"])
         dpg.set_value("status_text", f"Loaded {arch[0] if arch else 'unknown'}")
 
-        self._rebuild_tree_view()
-        self._update_detail_panel()
-        self._update_summary_panel()
+        self._rebuild_tree_from_model()
 
     # ---------- Tree rendering ----------
+    def _refresh_node_display(self, node: LayerNode):
+        """Update just this node's label/color in place — no rebuild, no
+        expand-state loss, since the underlying DPG item is never destroyed."""
+        tag = self._node_to_tag.get(node.name)
+        if tag is None or not dpg.does_item_exist(tag):
+            return
+        label, color = self._compute_label_and_color(node)
+        dpg.configure_item(tag, label=label)
+        dpg.bind_item_theme(tag, self._color_theme(color))
 
-    def _rebuild_tree_view(self):
-        dpg.delete_item("tree_container", children_only=True)
-        self._tag_to_node.clear()
-        if self.tree is not None:
-            self._render_node(self.tree, parent="tree_container")
 
     def _node_display_color(self, node: LayerNode) -> tuple[int, int, int]:
         mode = self.selection.get_mode(node.name)
@@ -65,11 +81,58 @@ class ExplorerApp:
         if mode == NodeMode.PEFT_TARGET:
             return (120, 200, 255)  # highlighted blue
         return (255, 255, 255)
+    
+    def _rebuild_tree_from_model(self):
+        if self.model is None:
+            return
+        tree = build_tree(self.model, root_name="model")
+        if self.collapse_layers:
+            tree = collapse_repeats(tree, min_repeat=3)
+        self.tree = tree
+
+        self._tag_to_node.clear()
+        self._node_to_tag.clear()
+        self._tag_counter = 0
+        dpg.delete_item("tree_container", children_only=True)
+        self._render_node(self.tree, parent="tree_container")
+        self._update_detail_panel()
+        self._update_summary_panel()
+
+    def _on_collapse_toggle(self, sender, app_data, user_data):
+        self.collapse_layers = app_data  # checkbox's bool value
+        self._rebuild_tree_from_model()
 
     def _render_node(self, node: LayerNode, parent: str):
         tag = self._next_tag()
         self._tag_to_node[tag] = node
+        self._node_to_tag[node.name] = tag  
 
+        label, color = self._compute_label_and_color(node)
+
+        with dpg.group(horizontal=True, parent=parent):
+            if node.children:
+                with dpg.tree_node(label=label, tag=tag, default_open=False):
+                    pass
+                with dpg.item_handler_registry() as handler:
+                    dpg.add_item_clicked_handler(callback=self._on_node_clicked, user_data=tag)
+                dpg.bind_item_handler_registry(tag, handler)
+                dpg.bind_item_theme(tag, self._color_theme(color))
+            else:
+                dpg.add_selectable(label=label, tag=tag, width=300,
+                                    callback=self._on_node_clicked, user_data=tag)
+                dpg.bind_item_theme(tag, self._color_theme(color))
+
+                if _is_linear_like(node):
+                    dpg.add_button(label="Prune", small=True,
+                                    callback=self._on_prune_toggle, user_data=tag)
+                    dpg.add_button(label="PEFT", small=True,
+                                    callback=self._on_peft_target_clicked, user_data=tag)
+
+        if node.children:
+            for child in node.children:
+                self._render_node(child, parent=tag)
+
+    def _compute_label_and_color(self, node: LayerNode) -> tuple[str, tuple[int, int, int]]:
         label = node.local_name or node.name
         if node.repeat_count:
             label += f"  [x{node.repeat_count}]"
@@ -84,34 +147,7 @@ class ExplorerApp:
             label = f"[{config.method} r={config.rank}] {label}"
 
         color = self._node_display_color(node)
-
-        row_group = f"{tag}_row"
-        with dpg.group(horizontal=True, parent=parent, tag=row_group):
-            if node.children:
-                with dpg.tree_node(label=label, tag=tag, default_open=False) as tn:
-                    pass
-                with dpg.item_handler_registry() as handler:
-                    dpg.add_item_clicked_handler(callback=self._on_node_clicked, user_data=tag)
-                dpg.bind_item_handler_registry(tag, handler)
-                dpg.bind_item_theme(tag, self._color_theme(color))
-            else:
-
-                dpg.add_selectable(label=label, tag=tag, width=300,
-                                    callback=self._on_node_clicked, user_data=tag)
-                dpg.bind_item_theme(tag, self._color_theme(color))
-
-                # Inline controls only for leaf Linear-like nodes (the actual
-                # PEFT/prune targets in practice — q_proj, k_proj, gate_proj, etc.)
-                if _is_linear_like(node):
-                    print(f"Creating prune/peft buttons for {node.name}")
-                    dpg.add_button(label="Prune", small=True,
-                                    callback=self._on_prune_toggle, user_data=tag)
-                    dpg.add_button(label="PEFT", small=True,
-                                    callback=self._on_peft_target_clicked, user_data=tag)
-
-        if node.children:
-            for child in node.children:
-                self._render_node(child, parent=tag)
+        return label, color
 
     def _color_theme(self, rgb: tuple[int, int, int]):
         # Dear PyGui themes must be created once and reused; creating a new
@@ -133,16 +169,14 @@ class ExplorerApp:
         self._update_detail_panel()
 
     def _on_prune_toggle(self, sender, app_data, user_data):
-        print(f"PRUNE CLICKED: tag={user_data}")
         tag = user_data
         node = self._tag_to_node.get(tag)
-        print(f"  resolved node: {node}")
         if node is None:
             return
         currently_pruned = self.selection.get_mode(node.name) == NodeMode.PRUNED
         self.selection.set_pruned(node.name, not currently_pruned)
         self.selected_node = node
-        self._rebuild_tree_view()
+        self._refresh_node_display(node)
         self._update_detail_panel()
         self._update_summary_panel()
 
@@ -167,7 +201,7 @@ class ExplorerApp:
         dropout = dpg.get_value("peft_dropout_input")
         config = PeftConfig(method=method, rank=rank, alpha=alpha, dropout=dropout)
         self.selection.set_peft_target(node.name, config)
-        self._rebuild_tree_view()
+        self._refresh_node_display(node)
         self._update_detail_panel()
         self._update_summary_panel()
 
@@ -176,7 +210,7 @@ class ExplorerApp:
         if node is None:
             return
         self.selection.clear(node.name)
-        self._rebuild_tree_view()
+        self._refresh_node_display(node)
         self._update_detail_panel()
         self._update_summary_panel()
 
@@ -240,33 +274,70 @@ class ExplorerApp:
         # PEFT config form — shown when explicitly requested (PEFT button
         # clicked) or when this node is already a PEFT target (so its config
         # can be edited/reapplied).
-        if _is_linear_like(node) and (peft_config_mode or mode == NodeMode.PEFT_TARGET):
-            dpg.add_separator(parent="detail_container")
-            dpg.add_text("PEFT configuration:", parent="detail_container")
-
-            existing = self.selection.peft_configs.get(node.name, PeftConfig())
-            dpg.add_combo(list(PEFT_METHODS), default_value=existing.method,
-                          tag="peft_method_combo", parent="detail_container")
-            dpg.add_input_int(label="rank", default_value=existing.rank,
-                               tag="peft_rank_input", parent="detail_container", width=120)
-            dpg.add_input_int(label="alpha", default_value=existing.alpha,
-                               tag="peft_alpha_input", parent="detail_container", width=120)
-            dpg.add_input_float(label="dropout", default_value=existing.dropout,
-                                 tag="peft_dropout_input", parent="detail_container", width=120)
-            dpg.add_button(label="Apply PEFT target", parent="detail_container",
-                            callback=self._apply_peft_config)
+        
+    def _on_peft_target_clicked(self, sender, app_data, user_data):
+        tag = user_data
+        node = self._tag_to_node.get(tag)
+        if node is None:
+            return
+        currently_targeted = self.selection.get_mode(node.name) == NodeMode.PEFT_TARGET
+        if currently_targeted:
+            self.selection.clear(node.name)
+        else:
+            self.selection.set_peft_target(node.name, self.global_peft_config)
+        self.selected_node = node
+        self._refresh_node_display(node)
+        self._update_detail_panel()
+        self._update_summary_panel()
 
     # ---------- Summary panel ----------
 
+    def _build_peft_config_controls(self):
+        """Create the global PEFT config input widgets once. These are never
+        deleted/recreated afterward — only their values are updated via
+        set_value, so they never lose keyboard focus while being edited."""
+        dpg.add_text("PEFT configuration (applies to all targeted layers):",
+                     parent="summary_container")
+        dpg.add_combo(list(PEFT_METHODS), default_value=self.global_peft_config.method,
+                      tag="global_peft_method", parent="summary_container",
+                      callback=self._on_global_peft_config_changed)
+        dpg.add_input_int(label="rank", default_value=self.global_peft_config.rank,
+                           tag="global_peft_rank", parent="summary_container", width=120,
+                           callback=self._on_global_peft_config_changed)
+        dpg.add_input_int(label="alpha", default_value=self.global_peft_config.alpha,
+                           tag="global_peft_alpha", parent="summary_container", width=120,
+                           callback=self._on_global_peft_config_changed)
+        dpg.add_input_float(label="dropout", default_value=self.global_peft_config.dropout,
+                             tag="global_peft_dropout", parent="summary_container", width=120,
+                             callback=self._on_global_peft_config_changed)
+        dpg.add_separator(parent="summary_container")
+
+        # Everything below this point IS destroyed/recreated on refresh —
+        # give it its own child container so the PEFT inputs above are
+        # untouched by that churn.
+        dpg.add_child_window(tag="summary_results_container", parent="summary_container",
+                              height=-80)  # leave room for the notebook-save controls below
+
+        dpg.add_separator(parent="summary_container")
+        dpg.add_input_text(label="Save as", default_value="finetune_notebook.ipynb",
+                            tag="notebook_filename_input", parent="summary_container", width=250)
+        dpg.add_button(label="Generate Notebook", parent="summary_container",
+                        callback=self._on_generate_notebook)
+        dpg.add_text("", tag="notebook_status_text", parent="summary_container")
+
     def _update_summary_panel(self):
-        dpg.delete_item("summary_container", children_only=True)
         if self.tree is None:
             return
+        if not dpg.does_item_exist("summary_results_container"):
+            # First time — build the static controls once.
+            self._build_peft_config_controls()
+
+        dpg.delete_item("summary_results_container", children_only=True)
 
         result = estimate(self.tree, self.selection)
 
         def row(label, value, color=(255, 255, 255)):
-            with dpg.group(horizontal=True, parent="summary_container"):
+            with dpg.group(horizontal=True, parent="summary_results_container"):
                 dpg.add_text(f"{label}:", color=(150, 150, 150))
                 dpg.add_text(str(value), color=color)
 
@@ -280,12 +351,73 @@ class ExplorerApp:
         row("Pruned nodes", result.pruned_node_count)
         row("PEFT targets", result.peft_target_count)
 
+        row("PEFT targets", result.peft_target_count)
+
+        peft_names = self.selection.peft_target_names()
+        if peft_names:
+            dpg.add_separator(parent="summary_results_container")
+            dpg.add_text("PEFT-targeted layers:", parent="summary_results_container")
+
+            grouped = self._group_peft_targets_by_layer_name(peft_names)
+            for layer_type, layer_indices in sorted(grouped.items()):
+                indices_str = ", ".join(str(i) for i in sorted(layer_indices, key=lambda x: (x is None, x)))
+                dpg.add_text(f"  {layer_type}: layer #{indices_str}",
+                             parent="summary_results_container")
+
         if result.warnings:
-            dpg.add_separator(parent="summary_container")
-            dpg.add_text("Warnings:", parent="summary_container", color=(255, 180, 80))
+            dpg.add_separator(parent="summary_results_container")
+            dpg.add_text("Warnings:", parent="summary_results_container", color=(255, 180, 80))
             for w in result.warnings:
-                dpg.add_text(f"  • {w}", parent="summary_container",
+                dpg.add_text(f"  • {w}", parent="summary_results_container",
                              color=(255, 180, 80), wrap=500)
+                
+
+    def _group_peft_targets_by_layer_name(self, node_names: list[str]) -> dict[str, list]:
+        import re
+        grouped: dict[str, list] = {}
+
+        for name in node_names:
+            match = re.search(r"\.layers\.(\d+)\.(.+)$", name)
+            if match:
+                layer_index = int(match.group(1))
+                layer_type = match.group(2)  # e.g. "self_attn.q_proj"
+            else:
+                layer_index = None
+                # not part of a repeated layer stack (e.g. "model.embed_tokens")
+                layer_type = name.split(".", 1)[-1] if "." in name else name
+
+            grouped.setdefault(layer_type, []).append(layer_index)
+
+        return grouped
+
+
+    def _on_global_peft_config_changed(self, sender, app_data, user_data):
+        method = dpg.get_value("global_peft_method")
+        rank = dpg.get_value("global_peft_rank")
+        alpha = dpg.get_value("global_peft_alpha")
+        dropout = dpg.get_value("global_peft_dropout")
+        self.global_peft_config = PeftConfig(method=method, rank=rank, alpha=alpha, dropout=dropout)
+
+        for node_name in self.selection.peft_target_names():
+            self.selection.peft_configs[node_name] = self.global_peft_config
+
+        self._update_summary_panel()  # only rebuilds summary_results_container now, not the inputs
+
+
+    def _on_generate_notebook(self, sender, app_data, user_data):
+        if self.tree is None:
+            dpg.set_value("notebook_status_text", "Load a model first.")
+            return
+
+        filename = dpg.get_value("notebook_filename_input") or "finetune_notebook.ipynb"
+        model_path = dpg.get_value("path_input")
+
+        try:
+            notebook = build_notebook(model_path, self.tree, self.selection)
+            save_notebook(notebook, filename)
+            dpg.set_value("notebook_status_text", f"Saved to {filename}")
+        except Exception as e:
+            dpg.set_value("notebook_status_text", f"Error: {e}")
 
 
 def main():
@@ -296,12 +428,10 @@ def main():
 
     with dpg.window(label="Main", tag="main_window"):
         with dpg.group(horizontal=True):
-            dpg.add_input_text(
-                tag="path_input",
-                hint="Path to local HF model directory (contains config.json)",
-                width=600,
-            )
+            dpg.add_input_text(tag="path_input", hint="...", width=600)
             dpg.add_button(label="Load", callback=app.on_load_clicked)
+            dpg.add_checkbox(label="Collapse identical layers", default_value=True,
+                              callback=app._on_collapse_toggle)
         dpg.add_text("", tag="status_text")
         dpg.add_separator()
 
