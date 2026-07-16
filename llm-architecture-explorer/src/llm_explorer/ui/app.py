@@ -29,6 +29,8 @@ class ExplorerApp:
         self._tag_counter = 0
         self.collapse_layers = True  # NEW: current tree view mode
         self.global_peft_config = PeftConfig()  # NEW: single shared LoRA config for all targets
+        self._diagram_expanded: set[str] = set()
+        self._diagram_box_positions: dict[str, tuple[int, int, int, int]] = {}
 
     def _next_tag(self) -> str:
         self._tag_counter += 1
@@ -53,6 +55,7 @@ class ExplorerApp:
         self._tag_to_node.clear()
         self._node_to_tag.clear()
         self._tag_counter = 0
+        
 
         if dpg.does_item_exist("summary_results_container"):
             dpg.delete_item("summary_container", children_only=True)  # force full rebuild of PEFT controls too
@@ -61,6 +64,7 @@ class ExplorerApp:
         dpg.set_value("status_text", f"Loaded {arch[0] if arch else 'unknown'}")
 
         self._rebuild_tree_from_model()
+        self._render_diagram()
 
     # ---------- Tree rendering ----------
     def _refresh_node_display(self, node: LayerNode):
@@ -179,6 +183,7 @@ class ExplorerApp:
         self._refresh_node_display(node)
         self._update_detail_panel()
         self._update_summary_panel()
+        self._render_diagram()
 
     def _on_peft_target_clicked(self, sender, app_data, user_data):
         tag = user_data
@@ -204,6 +209,7 @@ class ExplorerApp:
         self._refresh_node_display(node)
         self._update_detail_panel()
         self._update_summary_panel()
+        self._render_diagram()
 
     def _clear_node_selection(self, sender, app_data, user_data):
         node = self.selected_node
@@ -213,6 +219,7 @@ class ExplorerApp:
         self._refresh_node_display(node)
         self._update_detail_panel()
         self._update_summary_panel()
+        self._render_diagram()
 
     # ---------- Detail panel ----------
 
@@ -402,6 +409,7 @@ class ExplorerApp:
             self.selection.peft_configs[node_name] = self.global_peft_config
 
         self._update_summary_panel()  # only rebuilds summary_results_container now, not the inputs
+        self._render_diagram()
 
 
     def _on_generate_notebook(self, sender, app_data, user_data):
@@ -419,6 +427,119 @@ class ExplorerApp:
         except Exception as e:
             dpg.set_value("notebook_status_text", f"Error: {e}")
 
+
+    def _render_diagram(self):
+        dpg.delete_item("diagram_drawlist", children_only=True)
+        dpg.delete_item("diagram_buttons_layer", children_only=True)
+        if self.tree is None:
+            return
+
+        self._diagram_box_positions = {}  # node.name -> (x, y, w, h), rebuilt each render
+
+        box_w = 160
+        box_h = 40
+        x_gap = 40
+        y_gap = 10
+
+        # Recursively compute layout, then draw. Two passes: first compute
+        # the vertical extent (total height) each subtree needs so parents
+        # can be vertically centered against their children, then draw.
+        def subtree_height(node: LayerNode) -> int:
+            is_expanded = node.name in self._diagram_expanded
+            if not node.children or not is_expanded:
+                return box_h
+            total = 0
+            for child in node.children:
+                total += subtree_height(child) + y_gap
+            return max(total - y_gap, box_h)
+
+        def draw_node(node: LayerNode, x: int, y_top: int) -> int:
+            """Draws node and (if expanded) its children to the right.
+            Returns the total height consumed."""
+            is_expanded = node.name in self._diagram_expanded
+            height = subtree_height(node)
+            y_center = y_top + height // 2
+            box_y = y_center - box_h // 2
+
+            label, color = self._compute_label_and_color(node)
+            display_label = node.local_name
+            if node.repeat_count:
+                display_label += f" ×{node.repeat_count}"
+
+            fill_color = (60, 60, 60, 255)
+            if self.selection.is_descendant_pruned(node.name):
+                fill_color = (90, 90, 90, 255)
+            elif self.selection.get_mode(node.name) == NodeMode.PEFT_TARGET:
+                fill_color = (40, 90, 130, 255)
+
+            dpg.draw_rectangle(
+                (x, box_y), (x + box_w, box_y + box_h),
+                color=(200, 200, 200, 255), fill=fill_color,
+                parent="diagram_drawlist",
+            )
+            dpg.draw_text((x + 8, box_y + 12), display_label,
+                          color=(255, 255, 255, 255), size=14,
+                          parent="diagram_drawlist")
+
+            if node.children:
+                marker = "-" if is_expanded else "+"
+                dpg.draw_text((x + box_w - 20, box_y + 12), marker,
+                              color=(255, 255, 100, 255), size=16,
+                              parent="diagram_drawlist")
+
+            self._diagram_box_positions[node.name] = (x, box_y, box_w, box_h)
+
+            if node.children and is_expanded:
+                child_x = x + box_w + x_gap
+                cursor_y = y_top
+                for child in node.children:
+                    child_height = draw_node(child, child_x, cursor_y)
+                    cursor_y += child_height + y_gap
+
+            return height
+
+        total_height = draw_node(self.tree, 10, 10)
+
+        # Resize the drawlist to fit content, so the panel's scrollbars
+        # (from the enclosing child_window) actually have something
+        # meaningful to scroll against, in both directions.
+        max_x = max((x + w for x, y, w, h in self._diagram_box_positions.values()), default=800)
+        dpg.configure_item("diagram_drawlist", width=int(max_x) + 20, height=int(total_height) + 20)
+        drawlist_pos = dpg.get_item_pos("diagram_drawlist")
+        dpg.set_item_pos("diagram_buttons_layer", drawlist_pos)  # force overlay instead of vertical stacking
+
+        # Invisible click targets, one per drawn box, positioned exactly
+        # over each rectangle — reuses ImGui's native button click handling
+        # instead of hand-rolled mouse-position hit-testing.
+        for node_name, (x, y, w, h) in self._diagram_box_positions.items():
+            btn_tag = f"diagram_btn_{node_name}"
+            dpg.add_button(label="", tag=btn_tag, width=w, height=h,
+                            parent="diagram_buttons_layer",
+                            callback=self._on_diagram_node_clicked, user_data=node_name)
+            button_layer_pos = dpg.get_item_pos("diagram_buttons_layer")
+            print(f"drawlist_pos: {drawlist_pos}, button_layer_pos: {button_layer_pos}")
+            
+            dpg.set_item_pos(btn_tag, (x + drawlist_pos[0], y + drawlist_pos[1]))
+            with dpg.theme() as invisible_theme:
+                with dpg.theme_component(dpg.mvAll):
+                    dpg.add_theme_color(dpg.mvThemeCol_Button, (255, 0, 0, 120), category=dpg.mvThemeCat_Core)  # TEMP: visible red for debugging
+                    dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255, 30), category=dpg.mvThemeCat_Core)
+                    dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255, 60), category=dpg.mvThemeCat_Core)
+            dpg.bind_item_theme(btn_tag, invisible_theme)
+
+    def _on_diagram_node_clicked(self, sender, app_data, user_data):
+        print(f"DIAGRAM CLICK: {user_data}")
+        node_name = user_data
+        node = self.tree.find(node_name) if self.tree else None
+        if node is None or not node.children:
+            return  # only expandable nodes toggle; leaves do nothing here
+        if node_name in self._diagram_expanded:
+            self._diagram_expanded.discard(node_name)
+        else:
+            self._diagram_expanded.add(node_name)
+        self._render_diagram()
+
+    
 
 def main():
     dpg.create_context()
@@ -438,10 +559,19 @@ def main():
         with dpg.group(horizontal=True):
             with dpg.child_window(width=550, tag="tree_container"):
                 pass
-            with dpg.child_window(width=450, tag="detail_container"):
-                dpg.add_text("Select a node to see details.")
-            with dpg.child_window(tag="summary_container"):
-                dpg.add_text("Load a model to see resource estimates.")
+
+            # Right side: detail+summary on top (half height), diagram below
+            with dpg.child_window(tag="right_side_container"):
+                with dpg.group(horizontal=True, height=400):  # top half: existing two panels
+                    with dpg.child_window(width=450, tag="detail_container"):
+                        dpg.add_text("Select a node to see details.")
+                    with dpg.child_window(tag="summary_container"):
+                        dpg.add_text("Load a model to see resource estimates.")
+
+                dpg.add_separator()
+                with dpg.child_window(tag="diagram_container", horizontal_scrollbar=True):
+                    dpg.add_drawlist(width=800, height=400, tag="diagram_drawlist")
+                    dpg.add_group(tag="diagram_buttons_layer")
 
     dpg.setup_dearpygui()
     dpg.show_viewport()
