@@ -195,10 +195,24 @@ CMakeFiles/llama_dashboard.dir/src/process_utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/llama_dashboard.dir/src/process_utils.cpp.s"
 	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/process_utils.cpp" -o CMakeFiles/llama_dashboard.dir/src/process_utils.cpp.s
 
+CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o: CMakeFiles/llama_dashboard.dir/flags.make
+CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o: ../src/gguf_meta.cpp
+CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o: CMakeFiles/llama_dashboard.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o"
+	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o -MF CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o.d -o CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o -c "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/gguf_meta.cpp"
+
+CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.i"
+	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/gguf_meta.cpp" > CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.i
+
+CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.s"
+	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/gguf_meta.cpp" -o CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.s
+
 CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o: CMakeFiles/llama_dashboard.dir/flags.make
 CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o: ../third_party/sqlite3.c
 CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o: CMakeFiles/llama_dashboard.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_10) "Building C object CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_11) "Building C object CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o"
 	/usr/lib/ccache/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o -MF CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o.d -o CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o -c "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/sqlite3.c"
 
 CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.i: cmake_force
@@ -212,7 +226,7 @@ CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.s: cmake_force
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o: CMakeFiles/llama_dashboard.dir/flags.make
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o: ../third_party/imgui/imgui.cpp
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o: CMakeFiles/llama_dashboard.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o"
 	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o -MF CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o.d -o CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o -c "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui.cpp"
 
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.i: cmake_force
@@ -226,7 +240,7 @@ CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.s: cmake_force
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o: CMakeFiles/llama_dashboard.dir/flags.make
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o: ../third_party/imgui/imgui_draw.cpp
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o: CMakeFiles/llama_dashboard.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o"
 	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o -MF CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o.d -o CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o -c "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui_draw.cpp"
 
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.i: cmake_force
@@ -240,7 +254,7 @@ CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.s: cmake_force
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.o: CMakeFiles/llama_dashboard.dir/flags.make
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.o: ../third_party/imgui/imgui_tables.cpp
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.o: CMakeFiles/llama_dashboard.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.o"
 	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.o -MF CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.o.d -o CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.o -c "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui_tables.cpp"
 
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.i: cmake_force
@@ -254,7 +268,7 @@ CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_tables.cpp.s: cmake_force
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o: CMakeFiles/llama_dashboard.dir/flags.make
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o: ../third_party/imgui/imgui_widgets.cpp
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o: CMakeFiles/llama_dashboard.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o"
 	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o -MF CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o.d -o CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.o -c "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui_widgets.cpp"
 
 CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.i: cmake_force
@@ -268,7 +282,7 @@ CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_widgets.cpp.s: cmake_forc
 CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o: CMakeFiles/llama_dashboard.dir/flags.make
 CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o: ../third_party/imgui/backends/imgui_impl_glfw.cpp
 CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o: CMakeFiles/llama_dashboard.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o"
 	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o -MF CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o.d -o CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o -c "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/imgui/backends/imgui_impl_glfw.cpp"
 
 CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.i: cmake_force
@@ -282,7 +296,7 @@ CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.s:
 CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o: CMakeFiles/llama_dashboard.dir/flags.make
 CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o: ../third_party/imgui/backends/imgui_impl_opengl3.cpp
 CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o: CMakeFiles/llama_dashboard.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o"
 	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o -MF CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o.d -o CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o -c "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/imgui/backends/imgui_impl_opengl3.cpp"
 
 CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.i: cmake_force
@@ -296,7 +310,7 @@ CMakeFiles/llama_dashboard.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp
 CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o: CMakeFiles/llama_dashboard.dir/flags.make
 CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o: ../third_party/implot/implot.cpp
 CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o: CMakeFiles/llama_dashboard.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o"
 	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o -MF CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o.d -o CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.o -c "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/implot/implot.cpp"
 
 CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.i: cmake_force
@@ -310,7 +324,7 @@ CMakeFiles/llama_dashboard.dir/third_party/implot/implot.cpp.s: cmake_force
 CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.o: CMakeFiles/llama_dashboard.dir/flags.make
 CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.o: ../third_party/implot/implot_items.cpp
 CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.o: CMakeFiles/llama_dashboard.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.o"
 	/usr/lib/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.o -MF CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.o.d -o CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.o -c "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/third_party/implot/implot_items.cpp"
 
 CMakeFiles/llama_dashboard.dir/third_party/implot/implot_items.cpp.i: cmake_force
@@ -332,6 +346,7 @@ llama_dashboard_OBJECTS = \
 "CMakeFiles/llama_dashboard.dir/src/storage.cpp.o" \
 "CMakeFiles/llama_dashboard.dir/src/model_panel_sweep.cpp.o" \
 "CMakeFiles/llama_dashboard.dir/src/process_utils.cpp.o" \
+"CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o" \
 "CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o" \
 "CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o" \
 "CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o" \
@@ -354,6 +369,7 @@ llama_dashboard: CMakeFiles/llama_dashboard.dir/src/inference_panel.cpp.o
 llama_dashboard: CMakeFiles/llama_dashboard.dir/src/storage.cpp.o
 llama_dashboard: CMakeFiles/llama_dashboard.dir/src/model_panel_sweep.cpp.o
 llama_dashboard: CMakeFiles/llama_dashboard.dir/src/process_utils.cpp.o
+llama_dashboard: CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o
 llama_dashboard: CMakeFiles/llama_dashboard.dir/third_party/sqlite3.c.o
 llama_dashboard: CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui.cpp.o
 llama_dashboard: CMakeFiles/llama_dashboard.dir/third_party/imgui/imgui_draw.cpp.o
@@ -369,7 +385,7 @@ llama_dashboard: /usr/lib/x86_64-linux-gnu/libsqlite3.so
 llama_dashboard: /usr/lib/x86_64-linux-gnu/libGLX.so
 llama_dashboard: /usr/lib/x86_64-linux-gnu/libOpenGL.so
 llama_dashboard: CMakeFiles/llama_dashboard.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_19) "Linking CXX executable llama_dashboard"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir="/media/amiyaun/New Volume/chai-projects/llama/llama-gui/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_20) "Linking CXX executable llama_dashboard"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/llama_dashboard.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include "config_panel.h"
 #include "telemetry.h"
+#include "gguf_meta.h"
 
 struct InferenceStats {
     float tokens_per_sec = 0.0f;
@@ -127,10 +128,18 @@ private:
     bool m_scroll_ft       = false;
     bool m_focus_input     = true;
 
+    GGUFModelMeta m_base_model_meta;   // parsed once at spawn_base()
+
+    std::vector<float> m_infer_kv_theoretical_mb;  // theoretical KV-cache size, sampled per token
+    std::vector<float> m_infer_kv_actual_mb;       // read_meminfo() delta, sampled per token
+    MemSnapshot m_kv_baseline_mem;
+    std::string m_base_kv_type;  // captured at spawn time, so the reader thread doesn't need `cfg`
+
     // UI sub-renderers
     void render_controls(const DashboardConfig& cfg);
     void render_chat_columns(const DashboardConfig& cfg);
     void render_input_bar(const DashboardConfig& cfg);
     void render_kl_panel();
+    void render_kv_cache_panel();
     void render_telemetry_strip();
 };

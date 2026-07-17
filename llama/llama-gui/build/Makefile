@@ -201,6 +201,30 @@ src/dashboard.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/llama_dashboard.dir/build.make CMakeFiles/llama_dashboard.dir/src/dashboard.cpp.s
 .PHONY : src/dashboard.cpp.s
 
+src/gguf_meta.o: src/gguf_meta.cpp.o
+.PHONY : src/gguf_meta.o
+
+# target to build an object file
+src/gguf_meta.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/llama_dashboard.dir/build.make CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o
+.PHONY : src/gguf_meta.cpp.o
+
+src/gguf_meta.i: src/gguf_meta.cpp.i
+.PHONY : src/gguf_meta.i
+
+# target to preprocess a source file
+src/gguf_meta.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/llama_dashboard.dir/build.make CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.i
+.PHONY : src/gguf_meta.cpp.i
+
+src/gguf_meta.s: src/gguf_meta.cpp.s
+.PHONY : src/gguf_meta.s
+
+# target to generate assembly for a file
+src/gguf_meta.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/llama_dashboard.dir/build.make CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.s
+.PHONY : src/gguf_meta.cpp.s
+
 src/inference_panel.o: src/inference_panel.cpp.o
 .PHONY : src/inference_panel.o
 
@@ -579,6 +603,9 @@ help:
 	@echo "... src/dashboard.o"
 	@echo "... src/dashboard.i"
 	@echo "... src/dashboard.s"
+	@echo "... src/gguf_meta.o"
+	@echo "... src/gguf_meta.i"
+	@echo "... src/gguf_meta.s"
 	@echo "... src/inference_panel.o"
 	@echo "... src/inference_panel.i"
 	@echo "... src/inference_panel.s"

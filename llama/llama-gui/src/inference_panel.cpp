@@ -39,6 +39,14 @@ InferencePanel::~InferencePanel() {
 bool InferencePanel::spawn_base(const DashboardConfig& cfg) {
     kill_base();
 
+    m_base_model_meta = read_gguf_meta(cfg.base_gguf_path);
+    if (!m_base_model_meta.valid) {
+        std::cerr << "[KV PROFILER] Failed to read GGUF meta: "
+                   << m_base_model_meta.error << "\n";
+        // Not fatal — inference still works, KV profiling just won't be available.
+    }
+    m_kv_baseline_mem = read_meminfo();
+
     int master_fd, slave_fd;
     if (openpty(&master_fd, &slave_fd, nullptr, nullptr, nullptr) < 0)
         return false;
@@ -57,7 +65,9 @@ bool InferencePanel::spawn_base(const DashboardConfig& cfg) {
 
         std::string threads = std::to_string(cfg.n_threads);
         std::string npredict= std::to_string(cfg.n_predict);
-        std::string kv      = DashboardConfig::KV_TYPES[cfg.kv_type_idx];
+        
+        std::string kv = DashboardConfig::KV_TYPES[cfg.kv_type_idx];
+        m_base_kv_type = kv;  // NEW: store for the reader thread to use later
 
         std::vector<std::string> args_str = {
             cfg.llama_cli,
@@ -192,6 +202,40 @@ void InferencePanel::base_reader_func() {
                         (float)(m_base_stamps.size() - 1) / w;
             }
             m_base_stats.total_tokens++;
+
+            // KV-cache profiling sample
+            if (m_base_model_meta.valid) {
+                double bytes_per_elem = kv_type_bytes_per_element(m_base_kv_type);
+                // NOTE: cfg isn't in scope here — see note below, needs to be
+                // captured/stored at spawn time, not read from a parameter
+                // this function doesn't have.
+
+                uint64_t context_len = m_base_stats.total_tokens; // approximation: excludes prompt tokens, see note above
+
+                double theoretical_bytes =
+                    static_cast<double>(context_len)
+                    * 2.0  // K and V
+                    * m_base_model_meta.n_layer
+                    * m_base_model_meta.n_head_kv
+                    * m_base_model_meta.head_dim
+                    * bytes_per_elem;
+
+                MemSnapshot current_mem = read_meminfo();
+                float actual_delta_mb = m_kv_baseline_mem.used_mb > 0
+                    ? (current_mem.used_mb - m_kv_baseline_mem.used_mb)
+                    : 0.0f;
+
+                
+                m_infer_kv_theoretical_mb.push_back(
+                    static_cast<float>(theoretical_bytes / (1024.0 * 1024.0)));
+                m_infer_kv_actual_mb.push_back(actual_delta_mb);
+
+                std::cerr << "[KV PROFILE] tokens=" << context_len
+                           << " theoretical_mb=" << m_infer_kv_theoretical_mb.back()
+                           << " actual_delta_mb=" << actual_delta_mb
+                           << " kv_type=" << m_base_kv_type
+                           << "\n";
+            }
 
             // Sample telemetry
             if (m_telemetry) {
@@ -445,24 +489,38 @@ void InferencePanel::render(const DashboardConfig& cfg) {
     render_controls(cfg);
     ImGui::Separator();
 
-    float avail_h = ImGui::GetContentRegionAvail().y;
-    float chat_h  = avail_h * 0.63f;
-    float kl_h    = avail_h * 0.20f;
-    float telem_h = avail_h * 0.15f;
+    float avail_h   = ImGui::GetContentRegionAvail().y;
+    float input_h   = 40.0f;   // fixed, guaranteed space for the input bar
+    float remaining = avail_h - input_h;
+
+    float chat_h  = remaining * 0.50f;
+    float kl_h    = remaining * 0.20f;
+    float telem_h = remaining * 0.15f;
+    // kv_area keeps its own fixed 220px, same as before
 
     ImGui::BeginChild("chat_area", ImVec2(0, chat_h), false);
     render_chat_columns(cfg);
     ImGui::EndChild();
-
+    
+    ImGui::Separator();
+    render_input_bar(cfg);
+    
     ImGui::Separator();
     ImGui::BeginChild("kl_area", ImVec2(0, kl_h), false);
     render_kl_panel();
     ImGui::EndChild();
 
     ImGui::Separator();
+    ImGui::BeginChild("kv_area", ImVec2(0, 220), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+    render_kv_cache_panel();
+    ImGui::EndChild();
+
+    ImGui::Separator();
     ImGui::BeginChild("telem_area", ImVec2(0, telem_h), false);
     render_telemetry_strip();
     ImGui::EndChild();
+
+       // now a guaranteed-visible sibling, not nested inside chat_area
 }
 
 void InferencePanel::render_controls(const DashboardConfig& cfg) {
@@ -500,7 +558,7 @@ void InferencePanel::render_controls(const DashboardConfig& cfg) {
 void InferencePanel::render_chat_columns(const DashboardConfig& cfg) {
     float avail   = ImGui::GetContentRegionAvail().x;
     float col_w   = avail * 0.5f - 4.0f;
-    float chat_h  = ImGui::GetContentRegionAvail().y - 50.0f;
+    float chat_h  = ImGui::GetContentRegionAvail().y - 30.0f;
 
     // ---- Base model column ----
     ImGui::BeginChild("base_col", ImVec2(col_w, 0), false);
@@ -580,8 +638,6 @@ void InferencePanel::render_chat_columns(const DashboardConfig& cfg) {
     ImGui::EndChild();
     ImGui::EndChild();
 
-    // Input bar spanning full width
-    render_input_bar(cfg);
 }
 
 void InferencePanel::render_input_bar(const DashboardConfig& cfg) {
@@ -656,6 +712,61 @@ void InferencePanel::render_input_bar(const DashboardConfig& cfg) {
         send_to_base(prompt);
         send_to_kl_helper(prompt);
     }
+}
+
+void InferencePanel::render_kv_cache_panel() {
+    ImGui::TextColored({0.88f, 0.76f, 1.0f, 1.0f}, "KV Cache Profile");
+
+    std::lock_guard<std::mutex> lk(m_mutex);
+
+    if (m_infer_kv_theoretical_mb.empty()) {
+        ImGui::TextDisabled("Send a prompt to see KV-cache sampling.");
+        return;
+    }
+
+    if (!m_base_model_meta.valid) {
+        ImGui::TextColored({1.0f, 0.6f, 0.3f, 1.0f},
+            "Warning: GGUF metadata unavailable — plot may be incomplete.");
+    }
+
+    ImGui::Text("kv_type=%s  layers=%u  kv_heads=%u  head_dim=%u  |  current: %.2f MB theoretical, %.2f MB system delta",
+                m_base_kv_type.c_str(),
+                m_base_model_meta.n_layer,
+                m_base_model_meta.n_head_kv,
+                m_base_model_meta.head_dim,
+                m_infer_kv_theoretical_mb.back(),
+                m_infer_kv_actual_mb.empty() ? 0.0f : m_infer_kv_actual_mb.back());
+    
+    float panel_w = ImGui::GetContentRegionAvail().x;
+    float half_w  = panel_w * 0.5f - 4.0f;
+
+    auto small_plot = [&](const char* label,
+                          std::vector<float>& ys,
+                          const char* ylabel)
+    {
+        int n = std::min((int)m_infer_times.size(), (int)ys.size());
+        if (n < 2) return;
+
+        if (ImPlot::BeginPlot(label, ImVec2(half_w, 120),
+                               ImPlotFlags_NoLegend |
+                               ImPlotFlags_NoMenus))
+        {
+            ImPlot::SetupAxes("s", ylabel,
+                               ImPlotAxisFlags_AutoFit,
+                               ImPlotAxisFlags_AutoFit);
+
+            ImPlot::PlotLine(label,
+                              m_infer_times.data(),
+                              ys.data(),
+                              n);
+
+            ImPlot::EndPlot();
+        }
+    };
+
+    small_plot("Theoretical KV##kvtheo", m_infer_kv_theoretical_mb, "MB");
+    ImGui::SameLine();
+    small_plot("Actual delta##kvact", m_infer_kv_actual_mb, "MB");
 }
 
 void InferencePanel::render_kl_panel() {

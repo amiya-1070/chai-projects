@@ -186,6 +186,8 @@ CMakeFiles/llama_dashboard.dir/src/inference_panel.cpp.o: \
  /usr/include/c++/11/bits/stl_tempbuf.h \
  /usr/include/c++/11/bits/uniform_int_dist.h \
  /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/telemetry.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/gguf_meta.h \
+ /usr/include/c++/11/optional \
  /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui.h \
  /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imconfig.h \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/float.h /usr/include/string.h \

@@ -40,6 +40,7 @@ set(SOURCES
     src/storage.cpp
     src/model_panel_sweep.cpp
     src/process_utils.cpp
+    src/gguf_meta.cpp
     third_party/sqlite3.c
 )
 

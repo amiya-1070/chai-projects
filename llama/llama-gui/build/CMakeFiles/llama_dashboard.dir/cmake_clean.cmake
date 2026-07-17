@@ -5,6 +5,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/llama_dashboard.dir/src/config_panel.cpp.o.d"
   "CMakeFiles/llama_dashboard.dir/src/dashboard.cpp.o"
   "CMakeFiles/llama_dashboard.dir/src/dashboard.cpp.o.d"
+  "CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o"
+  "CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o.d"
   "CMakeFiles/llama_dashboard.dir/src/inference_panel.cpp.o"
   "CMakeFiles/llama_dashboard.dir/src/inference_panel.cpp.o.d"
   "CMakeFiles/llama_dashboard.dir/src/main.cpp.o"

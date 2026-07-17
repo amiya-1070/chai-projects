@@ -12,6 +12,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/benchmark_panel.cpp" "CMakeFiles/llama_dashboard.dir/src/benchmark_panel.cpp.o" "gcc" "CMakeFiles/llama_dashboard.dir/src/benchmark_panel.cpp.o.d"
   "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/config_panel.cpp" "CMakeFiles/llama_dashboard.dir/src/config_panel.cpp.o" "gcc" "CMakeFiles/llama_dashboard.dir/src/config_panel.cpp.o.d"
   "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/dashboard.cpp" "CMakeFiles/llama_dashboard.dir/src/dashboard.cpp.o" "gcc" "CMakeFiles/llama_dashboard.dir/src/dashboard.cpp.o.d"
+  "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/gguf_meta.cpp" "CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o" "gcc" "CMakeFiles/llama_dashboard.dir/src/gguf_meta.cpp.o.d"
   "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/inference_panel.cpp" "CMakeFiles/llama_dashboard.dir/src/inference_panel.cpp.o" "gcc" "CMakeFiles/llama_dashboard.dir/src/inference_panel.cpp.o.d"
   "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/main.cpp" "CMakeFiles/llama_dashboard.dir/src/main.cpp.o" "gcc" "CMakeFiles/llama_dashboard.dir/src/main.cpp.o.d"
   "/media/amiyaun/New Volume/chai-projects/llama/llama-gui/src/model_panel_sweep.cpp" "CMakeFiles/llama_dashboard.dir/src/model_panel_sweep.cpp.o" "gcc" "CMakeFiles/llama_dashboard.dir/src/model_panel_sweep.cpp.o.d"

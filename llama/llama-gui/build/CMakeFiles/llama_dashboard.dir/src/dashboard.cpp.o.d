@@ -178,6 +178,8 @@ CMakeFiles/llama_dashboard.dir/src/dashboard.cpp.o: \
  /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/sqlite3.h \
  /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/telemetry.h \
  /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/inference_panel.h \
+ /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/gguf_meta.h \
+ /usr/include/c++/11/optional \
  /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/src/model_panel_sweep.h \
  /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imgui.h \
  /media/amiyaun/New\ Volume/chai-projects/llama/llama-gui/third_party/imgui/imconfig.h \
