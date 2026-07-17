@@ -81,59 +81,131 @@ unpruned model. Pruning support will be added in a future version —
 for now, treat the prune markers as a design note, not an applied change.
 """
 
+def pruning_code(pruned_layer_indices: list[int], sub_layer_prune_warnings: list[str]) -> tuple[str, str]:
+    """Generates code to remove entire decoder layers from model.layers,
+    for pruned nodes that map to a full layer index (e.g. model.layers.7).
+
+    Sub-layer-level prune selections (e.g. pruning just self_attn or a
+    single q_proj within an otherwise-active layer) CANNOT be safely
+    codegenerated this way — LlamaMLP.forward() and similar have hardcoded
+    references to gate_proj/up_proj/down_proj etc., so removing a submodule
+    without rewriting forward() would break the model. Those are flagged
+    as warnings, not silently applied.
+    """
+    if not pruned_layer_indices and not sub_layer_prune_warnings:
+        return "code", "# No layers pruned.\n"
+
+    warning_lines = ""
+    if sub_layer_prune_warnings:
+        listed = "\n".join(f"#   - {w}" for w in sub_layer_prune_warnings)
+        warning_lines = (
+            "# NOTE: the following pruned selections are SUB-LAYER level "
+            "(e.g. a single attention or MLP projection within an otherwise-\n"
+            "# active decoder layer). These are NOT applied below — removing a\n"
+            "# submodule without rewriting the layer's forward() method would\n"
+            "# break the model. Only whole-layer pruning is auto-applied.\n"
+            f"{listed}\n\n"
+        )
+
+    if not pruned_layer_indices:
+        return "code", warning_lines + "# No whole layers pruned — only unsupported sub-layer prunes were selected (see note above).\n"
+
+    indices_str = ", ".join(str(i) for i in sorted(pruned_layer_indices))
+    code = f"""{warning_lines}# Remove pruned decoder layers entirely, BEFORE applying PEFT.
+# This assumes the model's decoder stack is a standard nn.ModuleList
+# (model.model.layers for causal LM wrappers) iterated sequentially in
+# forward() — true for Llama/Gemma/Mistral-style architectures, but not
+# guaranteed for every architecture. Inspect model.print_trainable_parameters()
+# and a test forward pass after this cell to confirm the model still runs.
+
+pruned_layer_indices = [{indices_str}]
+
+layers_attr = model.model.layers if hasattr(model, "model") else model.layers
+kept_layers = [layer for i, layer in enumerate(layers_attr) if i not in pruned_layer_indices]
+import torch.nn as nn
+if hasattr(model, "model"):
+    model.model.layers = nn.ModuleList(kept_layers)
+else:
+    model.layers = nn.ModuleList(kept_layers)
+
+# Update the model's own layer count metadata, if present, so anything
+# reading config.num_hidden_layers downstream (e.g. some generation utils)
+# stays consistent with the actual pruned layer count.
+if hasattr(model.config, "num_hidden_layers"):
+    model.config.num_hidden_layers = len(kept_layers)
+
+print(f"Pruned {{len(pruned_layer_indices)}} layer(s): {{pruned_layer_indices}}")
+print(f"Remaining layers: {{len(kept_layers)}}")
+"""
+    return "code", code
+
 
 def peft_config_code(peft_targets: list[tuple[str, "PeftConfig"]]) -> tuple[str, str]:
-    """peft_targets: list of (node_name, PeftConfig) for nodes marked PEFT_TARGET.
-
-    Only LoRA/QLoRA/DoRA are supported for actual codegen right now, since
-    those map onto peft library's LoraConfig with target_modules. Other
-    methods (AdaLoRA, IA3, Prefix Tuning) are flagged, not generated,
-    since they need separate config classes not yet wired up here.
-    """
     if not peft_targets:
         return "code", "# No PEFT targets selected — this will fine-tune the FULL model.\npeft_config = None\n"
 
-    # local_name (e.g. "q_proj") is what peft's target_modules expects,
-    # not the fully-qualified name — collect unique local names.
+    import re
+
     target_module_names = sorted({name.split(".")[-1] for name, _cfg in peft_targets})
 
-    # All targets currently share one config in the UI (method/rank/alpha
-    # per node, but peft's LoraConfig applies one rank/alpha across all
-    # target_modules) — use the first target's config as representative,
-    # and warn if configs actually differ across targets.
+    layer_indices = set()
+    has_non_layer_target = False
+    for name, _cfg in peft_targets:
+        match = re.search(r"\.layers\.(\d+)\.", name)
+        if match:
+            layer_indices.add(int(match.group(1)))
+        else:
+            has_non_layer_target = True  # e.g. embed_tokens — not part of the repeated layer stack
+
     methods_used = {cfg.method for _name, cfg in peft_targets}
     unsupported = methods_used - {"LoRA", "QLoRA", "DoRA"}
 
     warning_comment = ""
     if unsupported:
-        warning_comment = (
+        warning_comment += (
             f"# NOTE: methods {sorted(unsupported)} were selected for some targets "
-            f"but are not yet supported in codegen (only LoRA/QLoRA/DoRA are).\n"
-            f"# Those targets are included in target_modules below using LoRA as a fallback.\n"
+            f"but are not yet supported in codegen (only LoRA/QLoRA/DoRA are). "
+            f"Those targets are included below using LoRA as a fallback.\n"
         )
-
     if len(methods_used) > 1:
         warning_comment += (
             f"# NOTE: multiple PEFT methods were selected across targets ({sorted(methods_used)}). "
             f"peft.LoraConfig applies one rank/alpha/dropout to all target_modules — "
-            f"using the first target's values as representative. Adjust manually if needed.\n"
+            f"using the first target's values as representative.\n"
+        )
+    if has_non_layer_target:
+        warning_comment += (
+            f"# NOTE: some selected targets (e.g. embed_tokens) aren't part of the repeated "
+            f"decoder-layer stack, so layers_to_transform doesn't apply to them — they'll be "
+            f"targeted across the whole model instead, same as target_modules alone would do.\n"
+        )
+    if layer_indices:
+        warning_comment += (
+            f"# NOTE: layers_to_transform relies on peft's layer-index matching, which has "
+            f"been reported unreliable on some peft/transformers version combinations "
+            f"(see https://github.com/huggingface/peft/issues/2155). Verify "
+            f"model.print_trainable_parameters() below shows the expected count before training.\n"
         )
 
     rep_config = peft_targets[0][1]
+
+    layers_arg = ""
+    if layer_indices and not has_non_layer_target:
+        sorted_layers = sorted(layer_indices)
+        layers_arg = f",\n    layers_to_transform={sorted_layers!r}"
 
     code = f"""{warning_comment}peft_config = LoraConfig(
     task_type=TaskType.CAUSAL_LM,
     r={rep_config.rank},
     lora_alpha={rep_config.alpha},
     lora_dropout={rep_config.dropout},
-    target_modules={target_module_names!r},
+    target_modules={target_module_names!r}{layers_arg}
 )
 
 model = get_peft_model(model, peft_config)
-model.print_trainable_parameters()
+model.print_trainable_parameters()  # VERIFY this matches your explorer's estimate before trusting layers_to_transform worked
 """
     return "code", code
-
 
 def training_args_code() -> tuple[str, str]:
     return "code", """training_args = TrainingArguments(

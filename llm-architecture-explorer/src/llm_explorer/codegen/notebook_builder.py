@@ -17,10 +17,8 @@ def _make_cell(cell_type: str, source: str) -> dict:
     }
 
 
+
 def build_notebook(model_path: str, tree: LayerNode, selection: SelectionState) -> dict:
-    """Assemble a complete .ipynb (as a dict, ready for json.dump) from the
-    current model tree + user selections. Causal LM fine-tuning only, for now.
-    """
     cells = []
 
     def add(cell_type_source: tuple[str, str]):
@@ -32,14 +30,28 @@ def build_notebook(model_path: str, tree: LayerNode, selection: SelectionState) 
     result = compute_estimate(tree, selection)
     add(templates.resource_summary_markdown(result))
 
-    pruned_names = selection.pruned_names()
-    if pruned_names:
-        add(templates.pruning_notice_markdown(pruned_names))
-
     add(templates.install_deps_code())
     add(templates.imports_code())
     add(templates.load_model_code(model_path))
 
+    # --- Pruning: classify whole-layer vs sub-layer prunes ---
+    import re
+    pruned_names = selection.pruned_names()
+    whole_layer_indices = []
+    sub_layer_warnings = []
+    for name in pruned_names:
+        match = re.fullmatch(r".*\.layers\.(\d+)", name)
+        if match:
+            whole_layer_indices.append(int(match.group(1)))
+        else:
+            sub_layer_warnings.append(name)
+
+    if pruned_names:
+        add(templates.pruning_code(whole_layer_indices, sub_layer_warnings))
+
+    # --- PEFT (after pruning, so layer indices in layers_to_transform
+    #     refer to the ALREADY-PRUNED model's layer numbering, not the
+    #     original — see note below) ---
     peft_target_names = selection.peft_target_names()
     peft_targets = [(name, selection.peft_configs[name]) for name in peft_target_names]
     add(templates.peft_config_code(peft_targets))
