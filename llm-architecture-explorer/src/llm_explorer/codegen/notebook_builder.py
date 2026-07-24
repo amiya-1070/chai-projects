@@ -53,7 +53,7 @@ def build_notebook(model_path: str, tree: LayerNode, selection: SelectionState) 
     #     refer to the ALREADY-PRUNED model's layer numbering, not the
     #     original — see note below) ---
     peft_target_names = selection.peft_target_names()
-    peft_targets = [(name, selection.peft_configs[name]) for name in peft_target_names]
+    peft_targets = [(tree.find(name), selection.peft_configs[name]) for name in peft_target_names]
     add(templates.peft_config_code(peft_targets))
 
     add(templates.dataset_placeholder_code())

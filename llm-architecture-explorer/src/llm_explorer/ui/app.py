@@ -13,16 +13,17 @@ import re
 def _is_linear_like(node: LayerNode) -> bool:
     weight_shape = node.shape_info.get("weight")
     return (
-        node.module_type == "Linear"
+        node.module_type in ("Linear", "Conv1D")  # Conv1D: GPT-2's fused/transposed linear layer
         and weight_shape is not None
         and len(weight_shape) == 2
     )
 
 def _is_whole_layer(node: LayerNode) -> bool:
-        """True if this node represents an entire repeated decoder layer
-        (e.g. model.layers.7, or the collapsed representative model.layers.0),
-        as opposed to a leaf module or an intermediate container like self_attn."""
-        return bool(re.fullmatch(r".*\.layers\.\d+", node.name))
+    """True if this node represents an entire repeated transformer block —
+    covers both '.layers.N' (Llama/Gemma/Qwen-style) and '.h.N' (GPT-2-style
+    block-list naming)."""
+    return bool(re.fullmatch(r".*\.(layers|h)\.\d+", node.name))
+
 
 class ExplorerApp:
     def __init__(self):
@@ -490,10 +491,11 @@ class ExplorerApp:
         norm = self.tree.find("model.norm") or self._find_by_suffix("norm")
 
         if layers_container is None or not layers_container.children:
-            dpg.add_text("Diagram unavailable: expected a standard decoder-only "
-                         "structure (embed_tokens -> layers -> norm) but couldn't "
-                         "find a 'layers' block in this model.",
-                         parent="diagram_drawlist", wrap=600, color=(255, 180, 80))
+            dpg.draw_text((10, 10),
+                "Diagram unavailable: expected a standard decoder-only "
+                "structure (embed_tokens -> layers -> norm) but couldn't "
+                "find a 'layers' block in this model.",
+                color=(255, 180, 80, 255), size=14, parent="diagram_drawlist")
             return
 
         decoder_block = layers_container.children[0]  # representative block (collapsed or layers.0)
@@ -501,9 +503,10 @@ class ExplorerApp:
         mlp = self._find_child(decoder_block, "mlp")
 
         if self_attn is None or mlp is None:
-            dpg.add_text("Diagram unavailable: this doesn't look like a standard "
-                         "decoder block (expected self_attn + mlp submodules).",
-                         parent="diagram_drawlist", wrap=600, color=(255, 180, 80))
+            dpg.draw_text((10, 10),
+                "Diagram unavailable: this doesn't look like a standard "
+                "decoder block (expected self_attn + mlp submodules).",
+                color=(255, 180, 80, 255), size=14, parent="diagram_drawlist")
             return
 
         box_h = 40

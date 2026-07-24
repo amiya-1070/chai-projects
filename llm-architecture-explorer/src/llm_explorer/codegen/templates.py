@@ -112,25 +112,32 @@ def pruning_code(pruned_layer_indices: list[int], sub_layer_prune_warnings: list
 
     indices_str = ", ".join(str(i) for i in sorted(pruned_layer_indices))
     code = f"""{warning_lines}# Remove pruned decoder layers entirely, BEFORE applying PEFT.
-# This assumes the model's decoder stack is a standard nn.ModuleList
-# (model.model.layers for causal LM wrappers) iterated sequentially in
-# forward() — true for Llama/Gemma/Mistral-style architectures, but not
-# guaranteed for every architecture. Inspect model.print_trainable_parameters()
-# and a test forward pass after this cell to confirm the model still runs.
-
 pruned_layer_indices = [{indices_str}]
 
-layers_attr = model.model.layers if hasattr(model, "model") else model.layers
+# Different architectures store the block list under different attribute
+# paths (Llama/Gemma/Qwen: model.model.layers; GPT-2: model.transformer.h).
+# Try known patterns rather than assuming one.
+if hasattr(model, "model") and hasattr(model.model, "layers"):
+    container_obj, attr_name = model.model, "layers"
+elif hasattr(model, "transformer") and hasattr(model.transformer, "h"):
+    container_obj, attr_name = model.transformer, "h"
+elif hasattr(model, "layers"):
+    container_obj, attr_name = model, "layers"
+elif hasattr(model, "h"):
+    container_obj, attr_name = model, "h"
+else:
+    raise RuntimeError(
+        "Could not locate the decoder layer list on this model "
+        "(checked model.model.layers, model.transformer.h, model.layers, model.h). "
+        "Pruning codegen doesn't yet support this architecture's naming convention — "
+        "prune manually or adjust this cell."
+    )
+
+layers_attr = getattr(container_obj, attr_name)
 kept_layers = [layer for i, layer in enumerate(layers_attr) if i not in pruned_layer_indices]
 import torch.nn as nn
-if hasattr(model, "model"):
-    model.model.layers = nn.ModuleList(kept_layers)
-else:
-    model.layers = nn.ModuleList(kept_layers)
+setattr(container_obj, attr_name, nn.ModuleList(kept_layers))
 
-# Update the model's own layer count metadata, if present, so anything
-# reading config.num_hidden_layers downstream (e.g. some generation utils)
-# stays consistent with the actual pruned layer count.
 if hasattr(model.config, "num_hidden_layers"):
     model.config.num_hidden_layers = len(kept_layers)
 
@@ -140,24 +147,33 @@ print(f"Remaining layers: {{len(kept_layers)}}")
     return "code", code
 
 
-def peft_config_code(peft_targets: list[tuple[str, "PeftConfig"]]) -> tuple[str, str]:
+def peft_config_code(peft_targets: list[tuple["LayerNode", "PeftConfig"]]) -> tuple[str, str]:
+    """peft_targets: list of (LayerNode, PeftConfig) for nodes marked
+    PEFT_TARGET. Takes the actual LayerNode (not just its name) so we can
+    check module_type — needed to detect GPT-2-style Conv1D layers, which
+    require fan_in_fan_out=True in peft's LoraConfig due to their
+    transposed weight storage convention.
+    """
     if not peft_targets:
         return "code", "# No PEFT targets selected — this will fine-tune the FULL model.\npeft_config = None\n"
 
     import re
 
-    target_module_names = sorted({name.split(".")[-1] for name, _cfg in peft_targets})
+    target_module_names = sorted({node.local_name for node, _cfg in peft_targets})
 
     layer_indices = set()
     has_non_layer_target = False
-    for name, _cfg in peft_targets:
-        match = re.search(r"\.layers\.(\d+)\.", name)
+    for node, _cfg in peft_targets:
+        match = re.search(r"\.(layers|h)\.(\d+)\.", node.name)
         if match:
-            layer_indices.add(int(match.group(1)))
+            layer_indices.add(int(match.group(2)))
         else:
-            has_non_layer_target = True  # e.g. embed_tokens — not part of the repeated layer stack
+            has_non_layer_target = True
 
-    methods_used = {cfg.method for _name, cfg in peft_targets}
+    has_conv1d = any(node.module_type == "Conv1D" for node, _cfg in peft_targets)
+    has_linear = any(node.module_type == "Linear" for node, _cfg in peft_targets)
+
+    methods_used = {cfg.method for _node, cfg in peft_targets}
     unsupported = methods_used - {"LoRA", "QLoRA", "DoRA"}
 
     warning_comment = ""
@@ -175,16 +191,29 @@ def peft_config_code(peft_targets: list[tuple[str, "PeftConfig"]]) -> tuple[str,
         )
     if has_non_layer_target:
         warning_comment += (
-            f"# NOTE: some selected targets (e.g. embed_tokens) aren't part of the repeated "
-            f"decoder-layer stack, so layers_to_transform doesn't apply to them — they'll be "
-            f"targeted across the whole model instead, same as target_modules alone would do.\n"
+            f"# NOTE: some selected targets aren't part of the repeated layer stack, "
+            f"so layers_to_transform doesn't apply to them.\n"
         )
     if layer_indices:
         warning_comment += (
             f"# NOTE: layers_to_transform relies on peft's layer-index matching, which has "
             f"been reported unreliable on some peft/transformers version combinations "
             f"(see https://github.com/huggingface/peft/issues/2155). Verify "
-            f"model.print_trainable_parameters() below shows the expected count before training.\n"
+            f"model.print_trainable_parameters() below shows the expected count.\n"
+        )
+    if has_conv1d and has_linear:
+        warning_comment += (
+            f"# WARNING: selected targets mix Conv1D (e.g. GPT-2 style c_attn/c_proj) and "
+            f"standard Linear modules. fan_in_fan_out=True is required for Conv1D targets but "
+            f"WRONG for Linear targets — peft.LoraConfig only accepts one value for the whole "
+            f"config. This mixed selection cannot be correctly codegenerated as a single "
+            f"LoraConfig; consider targeting only one module type at a time.\n"
+        )
+    elif has_conv1d:
+        warning_comment += (
+            f"# NOTE: target(s) use Conv1D (GPT-2-style fused/transposed weight layout), "
+            f"so fan_in_fan_out=True is set below — required for LoRA to work correctly "
+            f"with this layer type.\n"
         )
 
     rep_config = peft_targets[0][1]
@@ -194,16 +223,20 @@ def peft_config_code(peft_targets: list[tuple[str, "PeftConfig"]]) -> tuple[str,
         sorted_layers = sorted(layer_indices)
         layers_arg = f",\n    layers_to_transform={sorted_layers!r}"
 
+    fan_in_fan_out_arg = ""
+    if has_conv1d and not has_linear:
+        fan_in_fan_out_arg = ",\n    fan_in_fan_out=True"
+
     code = f"""{warning_comment}peft_config = LoraConfig(
     task_type=TaskType.CAUSAL_LM,
     r={rep_config.rank},
     lora_alpha={rep_config.alpha},
     lora_dropout={rep_config.dropout},
-    target_modules={target_module_names!r}{layers_arg}
+    target_modules={target_module_names!r}{layers_arg}{fan_in_fan_out_arg}
 )
 
 model = get_peft_model(model, peft_config)
-model.print_trainable_parameters()  # VERIFY this matches your explorer's estimate before trusting layers_to_transform worked
+model.print_trainable_parameters()  # VERIFY this matches your explorer's estimate
 """
     return "code", code
 
